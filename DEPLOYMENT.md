@@ -21,7 +21,10 @@
 3. **تنظیم متغیرهای محیطی** (در تنظیمات اپ):
    - `DATABASE_URL` = (از مرحله ۲)
    - `JWT_SECRET` = یک رشته تصادفی حداقل ۳۲ کاراکتری (مثلاً `openssl rand -base64 32`)
-   - `ADMIN_PASSWORD` = رمز قوی برای ادمین (پیش‌فرض `admin123` — حتماً تغییر دهید)
+   - `ADMIN_EMAIL` = `admin@parto.online` (اختیاری، پیش‌فرض همین است)
+   - `ADMIN_PASSWORD` = رمز قوی برای مدیر (پیش‌فرض `admin123` — حتماً تغییر دهید)
+   - `SECRETARY_EMAIL` = `secretary@parto.online` (اختیاری)
+   - `SECRETARY_PASSWORD` = رمز قوی برای منشی (پیش‌فرض `secretary123` — حتماً تغییر دهید)
    - `NODE_ENV` = `production`
 
 4. **دستورات Build/Start** (در پنل پارس‌پک):
@@ -33,7 +36,7 @@
    ```bash
    ADMIN_PASSWORD=xxx npx tsx prisma/seed.ts
    ```
-   این دستور ادمین، ۸ خدمت، ۶ مقاله، نظرات و تنظیمات را ایجاد می‌کند.
+   این دستور دو حساب (مدیر و منشی)، ۸ خدمت، ۶ مقاله، نظرات و تنظیمات را ایجاد می‌کند.
 
 6. **فایل‌های آپلود شده**: پارس‌پک volume پایدار را به مسیر `/app/public/uploads` mount کنید تا تصاویر آپلود شده پاک نشوند.
 
