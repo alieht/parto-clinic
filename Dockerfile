@@ -20,8 +20,8 @@ COPY --from=builder /app/public ./public
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/src/generated ./src/generated
 
-# Install prisma for migrations
-RUN npm install -g prisma 2>/dev/null || true
+# Persistent uploads directory
+RUN mkdir -p /app/public/uploads
 
 EXPOSE 3000
-CMD ["node", "server.js"]
+CMD ["sh", "-c", "npx prisma migrate deploy && node server.js"]

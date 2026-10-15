@@ -1172,6 +1172,7 @@ export type PaymentCreateManyArgs<ExtArgs extends runtime.Types.Extensions.Inter
    * The data used to create many Payments.
    */
   data: Prisma.PaymentCreateManyInput | Prisma.PaymentCreateManyInput[]
+  skipDuplicates?: boolean
 }
 
 /**
@@ -1190,6 +1191,7 @@ export type PaymentCreateManyAndReturnArgs<ExtArgs extends runtime.Types.Extensi
    * The data used to create many Payments.
    */
   data: Prisma.PaymentCreateManyInput | Prisma.PaymentCreateManyInput[]
+  skipDuplicates?: boolean
 }
 
 /**

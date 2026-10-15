@@ -4,6 +4,8 @@ import { prisma } from "@/lib/db";
 import { formatDate } from "@/lib/utils";
 
 
+export const dynamic = "force-dynamic";
+
 export default async function ArticlesPage() {
   const articles = await prisma.article.findMany({
     where: { published: true },

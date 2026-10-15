@@ -2,41 +2,68 @@
 
 ## گزینه ۱: Pars Pack PaaS (توصیه شده برای ایران)
 
-### مراحل:
-1. **خرید سرویس PaaS Next.js** از پارس‌پک (parspack.com/paas/nextjs)
-2. **اتصال به Git**: در پنل پارس‌پک، مخزن Git پروژه را متصل کنید
-3. **تنظیم متغیرهای محیطی** در پنل:
-   - `DATABASE_URL` = `file:./prod.db`
-   - `JWT_SECRET` = یک رشته تصادفی ۳۲ کاراکتری
-   - `ADMIN_PASSWORD` = رمز قوی برای ادمین
+### پیش‌نیازها
+- ریپازیتوری GitHub: https://github.com/alieht/parto-clinic
+- سرویس PaaS Next.js در پارس‌پک
+- سرویس PostgreSQL مدیریت‌شده در پارس‌پک (برای پایداری داده‌ها)
+
+### مراحل در پنل پارس‌پک
+
+1. **ساخت اپ Next.js**
+   - در پنل پارس‌پک → ایجاد سرویس جدید → نوع: Next.js
+   - اتصال به Git: مخزن `alieht/parto-clinic`، برنچ `main`
+
+2. **ساخت دیتابیس PostgreSQL**
+   - در پنل پارس‌پک → ایجاد سرویس PostgreSQL (مدیریت‌شده)
+   - نام DB: `parto`، کاربر: `parto`
+   - کپی کردن `DATABASE_URL` (فرمت: `postgresql://user:pass@host:5432/parto?schema=public`)
+
+3. **تنظیم متغیرهای محیطی** (در تنظیمات اپ):
+   - `DATABASE_URL` = (از مرحله ۲)
+   - `JWT_SECRET` = یک رشته تصادفی حداقل ۳۲ کاراکتری (مثلاً `openssl rand -base64 32`)
+   - `ADMIN_PASSWORD` = رمز قوی برای ادمین (پیش‌فرض `admin123` — حتماً تغییر دهید)
    - `NODE_ENV` = `production`
-4. **دستورات Build/Start** (در پنل پارس‌پک تنظیم کنید):
-   - Build: `npm run build && npx prisma migrate deploy`
+
+4. **دستورات Build/Start** (در پنل پارس‌پک):
+   - Build: `npm ci && npx prisma migrate deploy && npm run build`
    - Start: `npm start`
-5. **اجرای Seed** (یک‌بار، از طریق console یا SSH):
+   > نکته: `prisma generate` به صورت خودکار در `postinstall` و `build` اجرا می‌شود.
+
+5. **اجرای Seed** (یک‌بار، از طریق console/SSH پارس‌پک):
    ```bash
    ADMIN_PASSWORD=xxx npx tsx prisma/seed.ts
    ```
-6. **اتصال دامنه**: در پنل پارس‌پک، دامنه `parto.online` را به سرویس متصل کنید
-7. **SSL**: پارس‌پک SSL رایگان ارائه می‌دهد — فعال کنید
+   این دستور ادمین، ۸ خدمت، ۶ مقاله، نظرات و تنظیمات را ایجاد می‌کند.
 
-### نکات مهم:
-- اگر کانتینر ephemeral است، SQLite و فایل‌های آپلود شده پاک می‌شوند → از **PostgreSQL مدیریت‌شده** پارس‌پک استفاده کنید
-- برای فایل‌های آپلود، از **Object Storage** پارس‌پک یا Cloudinary استفاده کنید
+6. **فایل‌های آپلود شده**: پارس‌پک volume پایدار را به مسیر `/app/public/uploads` mount کنید تا تصاویر آپلود شده پاک نشوند.
 
-## گزینه ۲: سرور اختصاصی (VPS)
+7. **اتصال دامنه**: در پنل پارس‌پک، دامنه `parto.online` را به سرویس متصل کنید.
 
-### مراحل:
-1. خرید VPS (پارس‌پک، ایران‌سرور، یا Hetzner برای اروپا)
-2. نصب Node.js 20 + PM2
-3. کلون پروژه + npm install + build
-4. تنظیم Nginx به عنوان reverse proxy
-5. تنظیم SSL با Let's Encrypt (certbot)
-6. PM2 برای keep-alive
+8. **SSL**: پارس‌پک SSL رایگان ارائه می‌دهد — فعال کنید.
+
+9. **بررسی سلامت**: پس از لانچ، `https://parto.online/api/health` باید `{"status":"ok"}` برگرداند.
+
+### نکات مهم
+- Build قبل از migrate deploy اجرا نشود؛ ترتیب بالا را رعایت کنید.
+- اگر کانتینر ephemeral است، بدون volume پایدار، فایل‌های آپلود پاک می‌شوند.
+- برای بکاپ دیتابیس، از بکاپ خودکار PostgreSQL پارس‌پک استفاده کنید.
+
+## گزینه ۲: سرور اختصاصی (VPS) با Docker
 
 ```bash
 # روی سرور
-git clone <repo>
+git clone https://github.com/alieht/parto-clinic.git
+cd parto-clinic
+cp .env.example .env
+# ویرایش .env (DATABASE_URL, JWT_SECRET, ADMIN_PASSWORD)
+docker compose up -d --build
+# seed یک‌بار:
+docker compose exec app npx tsx prisma/seed.ts
+```
+
+یا بدون Docker:
+```bash
+git clone https://github.com/alieht/parto-clinic.git
 cd parto-clinic
 npm ci
 npx prisma migrate deploy
@@ -45,26 +72,20 @@ npm run build
 pm2 start npm --name "parto" -- start
 ```
 
-## گزینه ۳: Vercel (سریع‌ترین، اما نیاز به تغییرات)
-
-- Vercel serverless است → SQLite کار نمی‌کند
-- نیاز به: PostgreSQL (Vercel Postgres / Neon) + Vercel Blob (برای فایل‌ها)
+## گزینه ۳: Vercel
+- Vercel serverless → نیاز به PostgreSQL خارجی (Neon/Supabase) و Vercel Blob (فایل‌ها)
 - Deploy با یک کلیک از GitHub
 
-## توصیه
-برای کلینیک پرتو در بهبهان:
-- **پارس‌پک PaaS Next.js** (لوکیشن ایران، پشتیبانی فارسی، پرداخت ریالی)
-- **PostgreSQL مدیریت‌شده** پارس‌پک (برای پایداری داده‌ها)
-- **Object Storage** پارس‌پک (برای فایل‌های آپلود شده)
-
 ## چک‌لیست قبل از لانچ
-- [ ] تغییر رمز ادمین
+- [ ] تغییر رمز ادمین (ADMIN_PASSWORD)
 - [ ] تنظیم JWT_SECRET قوی
 - [ ] اجرای migration روی دیتابیس production
 - [ ] اجرای seed
 - [ ] اتصال دامنه parto.online
 - [ ] فعال‌سازی SSL
+- [ ] تست /api/health
 - [ ] تست تمام صفحات
 - [ ] تست فلوی رزرو نوبت
 - [ ] تست پنل مدیر
 - [ ] تست روی موبایل
+- [ ] Revoke توکن GitHub استفاده‌شده برای پوش

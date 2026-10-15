@@ -3,7 +3,12 @@ import { prisma } from "@/lib/db";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = "https://parto.online";
-  const articles = await prisma.article.findMany({ where: { published: true }, select: { slug: true, updatedAt: true } });
+  let articles: { slug: string; updatedAt: Date }[] = [];
+  try {
+    articles = await prisma.article.findMany({ where: { published: true }, select: { slug: true, updatedAt: true } });
+  } catch {
+    articles = [];
+  }
 
   const staticRoutes: MetadataRoute.Sitemap = [
     { url: baseUrl, lastModified: new Date(), changeFrequency: "weekly", priority: 1.0 },

@@ -1,0 +1,32 @@
+version: "3.9"
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: parto
+      POSTGRES_PASSWORD: parto
+      POSTGRES_DB: parto
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  app:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      - db
+    environment:
+      DATABASE_URL: "postgresql://parto:parto@db:5432/parto?schema=public"
+      JWT_SECRET: "change-me-in-production"
+      ADMIN_PASSWORD: "admin123"
+      NODE_ENV: "production"
+    ports:
+      - "3000:3000"
+    volumes:
+      - uploads:/app/public/uploads
+
+volumes:
+  pgdata:
+  uploads:
