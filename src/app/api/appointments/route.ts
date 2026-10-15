@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { requireAuth } from "@/lib/auth";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { appointmentSchema } from "@/lib/validation";
 import path from "path";

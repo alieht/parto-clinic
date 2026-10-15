@@ -1,9 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { requireAuth } from "@/lib/auth";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const all = searchParams.get("all") === "true";
+  if (all) {
+    const auth = requireAuth(req, ["admin", "secretary"]);
+    if (auth instanceof NextResponse) return auth;
+  }
   const where = all ? {} : { approved: true };
   const reviews = await prisma.review.findMany({ where, orderBy: { createdAt: "desc" } });
   return NextResponse.json(reviews);

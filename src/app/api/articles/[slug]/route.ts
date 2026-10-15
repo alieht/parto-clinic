@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { requireAuth } from "@/lib/auth";
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -9,6 +10,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
 }
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
+  const auth = requireAuth(req, ["admin"]);
+  if (auth instanceof NextResponse) return auth;
   const { slug } = await params;
   const body = await req.json();
   const article = await prisma.article.update({ where: { slug }, data: body });
@@ -16,6 +19,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ sl
 }
 
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
+  const auth = requireAuth(req, ["admin"]);
+  if (auth instanceof NextResponse) return auth;
   const { slug } = await params;
   await prisma.article.delete({ where: { slug } });
   return NextResponse.json({ success: true });

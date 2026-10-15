@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { requireAuth } from "@/lib/auth";
 import { contactSchema } from "@/lib/validation";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const auth = requireAuth(req, ["admin", "secretary"]);
+  if (auth instanceof NextResponse) return auth;
   const messages = await prisma.contactMessage.findMany({ orderBy: { createdAt: "desc" } });
   return NextResponse.json(messages);
 }

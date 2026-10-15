@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireAuth } from "@/lib/auth";
 import path from "path";
 import fs from "fs";
 
 export async function POST(req: NextRequest) {
+  const auth = requireAuth(req, ["admin"]);
+  if (auth instanceof NextResponse) return auth;
   try {
     const formData = await req.formData();
     const file = formData.get("file") as File | null;

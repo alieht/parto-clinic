@@ -18,14 +18,16 @@ import {
 import { Button } from "@/components/ui/Button";
 
 const NAV = [
-  { href: "/admin", label: "داشبورد", icon: LayoutDashboard },
-  { href: "/admin/appointments", label: "نوبت‌ها", icon: Calendar },
-  { href: "/admin/articles", label: "مقالات", icon: FileText },
-  { href: "/admin/services", label: "خدمات", icon: Layers },
-  { href: "/admin/reviews", label: "نظرات", icon: Star },
-  { href: "/admin/messages", label: "پیام‌ها", icon: MessageSquare },
-  { href: "/admin/settings", label: "تنظیمات", icon: Settings },
+  { href: "/admin", label: "داشبورد", icon: LayoutDashboard, roles: ["admin", "secretary"] },
+  { href: "/admin/appointments", label: "نوبت‌ها", icon: Calendar, roles: ["admin", "secretary"] },
+  { href: "/admin/reviews", label: "نظرات", icon: Star, roles: ["admin", "secretary"] },
+  { href: "/admin/messages", label: "پیام‌ها", icon: MessageSquare, roles: ["admin", "secretary"] },
+  { href: "/admin/articles", label: "مقالات", icon: FileText, roles: ["admin"] },
+  { href: "/admin/services", label: "خدمات", icon: Layers, roles: ["admin"] },
+  { href: "/admin/settings", label: "تنظیمات", icon: Settings, roles: ["admin"] },
 ];
+
+const RESTRICTED_FOR_SECRETARY = ["/admin/articles", "/admin/services", "/admin/settings"];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -59,6 +61,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   if (!user) return null;
 
+  const isRestricted =
+    user.role === "secretary" &&
+    RESTRICTED_FOR_SECRETARY.some((p) => pathname === p || pathname.startsWith(p + "/"));
+
   const logout = async () => {
     await fetch("/api/auth/logout", { method: "POST" });
     router.push("/admin/login");
@@ -87,7 +93,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </button>
         </div>
         <nav className="p-4 space-y-1">
-          {NAV.map((n) => {
+          {NAV.filter((n) => !n.roles || n.roles.includes(user?.role)).map((n) => {
             const active = pathname === n.href;
             return (
               <Link
@@ -108,6 +114,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <div className="text-sm mb-2 px-2">
             <div className="font-medium">{user.name}</div>
             <div className="text-xs text-muted-foreground">{user.email}</div>
+            <div className="text-xs mt-1">
+              <span className={`inline-block px-2 py-0.5 rounded-full ${user.role === "admin" ? "bg-primary/10 text-primary" : "bg-amber-100 text-amber-700"}`}>
+                {user.role === "admin" ? "مدیر" : "منشی"}
+              </span>
+            </div>
           </div>
           <button
             onClick={logout}
@@ -135,7 +146,19 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             مشاهده سایت ←
           </Link>
         </header>
-        <main className="p-6">{children}</main>
+        <main className="p-6">
+          {isRestricted ? (
+            <div className="max-w-md mx-auto mt-20 text-center">
+              <div className="text-6xl mb-4">🔒</div>
+              <h2 className="text-xl font-bold mb-2">دسترسی محدود</h2>
+              <p className="text-muted-foreground">
+                شما به این بخش دسترسی ندارید. برای مدیریت خدمات، مقالات و تنظیمات با مدیر تماس بگیرید.
+              </p>
+            </div>
+          ) : (
+            children
+          )}
+        </main>
       </div>
     </div>
   );

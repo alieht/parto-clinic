@@ -11,16 +11,32 @@ const prisma = new PrismaClient({ adapter });
 
 async function main() {
   // Admin user
+  const adminEmail = process.env.ADMIN_EMAIL || "admin@parto.online";
   const adminPassword = process.env.ADMIN_PASSWORD || "admin123";
-  const hashed = await bcrypt.hash(adminPassword, 10);
+  const adminHashed = await bcrypt.hash(adminPassword, 10);
+
+  const secretaryEmail = process.env.SECRETARY_EMAIL || "secretary@parto.online";
+  const secretaryPassword = process.env.SECRETARY_PASSWORD || "secretary123";
+  const secretaryHashed = await bcrypt.hash(secretaryPassword, 10);
   await prisma.user.upsert({
-    where: { email: "admin@parto.online" },
-    update: {},
+    where: { email: adminEmail },
+    update: { password: adminHashed, role: "admin" },
     create: {
-      email: "admin@parto.online",
+      email: adminEmail,
       name: "مدیر کلینیک",
-      password: hashed,
+      password: adminHashed,
       role: "admin",
+    },
+  });
+
+  await prisma.user.upsert({
+    where: { email: secretaryEmail },
+    update: { password: secretaryHashed, role: "secretary" },
+    create: {
+      email: secretaryEmail,
+      name: "منشی کلینیک",
+      password: secretaryHashed,
+      role: "secretary",
     },
   });
 
