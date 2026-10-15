@@ -4,10 +4,10 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && next build",
+    "build": "npx prisma generate && next build",
     "start": "next start",
     "lint": "eslint",
-    "postinstall": "prisma generate"
+    "postinstall": "npx prisma generate"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.9.1",
@@ -27,18 +27,18 @@
     "react-dom": "19.3.0",
     "react-hook-form": "^7.90.0",
     "tailwind-merge": "^3.7.0",
-    "zod": "^4.6.7"
-  },
-  "devDependencies": {
+    "zod": "^4.6.7",
+    "typescript": "^5",
+    "tailwindcss": "^4",
     "@tailwindcss/turbopack": "^4",
-    "@types/bcryptjs": "^2.4.6",
-    "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/jsonwebtoken": "^9.0.10"
+  },
+  "devDependencies": {
     "eslint": "^9",
-    "eslint-config-next": "16.4.1",
-    "tailwindcss": "^4",
-    "typescript": "^5"
+    "eslint-config-next": "16.4.1"
   }
 }
