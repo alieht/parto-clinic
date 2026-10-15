@@ -28,17 +28,22 @@
    - `NODE_ENV` = `production`
 
 4. **دستورات Build/Start** (در پنل پارس‌پک):
-   - Build: `npm install && npx prisma migrate deploy && npm run build`
+   - Build: `npm install && npm run build` (npm run build = npx next build)
+   > هیچ دستور prisma در build نیست؛ Prisma Client از قبل commit شده است.
    > اگر میرور npm پارس‌پک نسخه‌ای را نداشت، قبل از npm install این را اضافه کنید:
    > `npm config set registry https://registry.npmjs.org/`
    - Start: `npm start`
    > نکته: `prisma generate` به صورت خودکار در `postinstall` و `build` اجرا می‌شود.
 
-5. **اجرای Seed** (یک‌بار، از طریق console/SSH پارس‌پک):
-   ```bash
-   ADMIN_PASSWORD=xxx npx tsx prisma/seed.ts
-   ```
-   این دستور دو حساب (مدیر و منشی)، ۸ خدمت، ۶ مقاله، نظرات و تنظیمات را ایجاد می‌کند.
+5. **راه‌اندازی دیتابیس (یک‌بار)** — پس از deploy موفق:
+   - متغیر `SETUP_TOKEN` را در Config/Secret ست کنید (یک رشته تصادفی)
+   - یک درخواست POST بفرستید:
+     ```
+     curl -X POST "https://parto.online/api/setup?token=YOUR_SETUP_TOKEN"
+     ```
+     یا در مرورگر: `https://parto.online/api/setup?token=YOUR_SETUP_TOKEN` (با روش POST)
+   - این endpoint جداول را می‌سازد و داده‌های اولیه (دو حساب، خدمات، مقالات، نظرات، تنظیمات) را seed می‌کند.
+   - پس از موفقیت، `SETUP_TOKEN` را از env vars حذف کنید (یا endpoint را حذف کنید).
 
 6. **فایل‌های آپلود شده**: پارس‌پک volume پایدار را به مسیر `/app/public/uploads` mount کنید تا تصاویر آپلود شده پاک نشوند.
 
