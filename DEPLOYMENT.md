@@ -28,7 +28,9 @@
    - `NODE_ENV` = `production`
 
 4. **دستورات Build/Start** (در پنل پارس‌پک):
-   - Build: `npm ci && npx prisma migrate deploy && npm run build`
+   - Build: `npm install && npx prisma migrate deploy && npm run build`
+   > اگر میرور npm پارس‌پک نسخه‌ای را نداشت، قبل از npm install این را اضافه کنید:
+   > `npm config set registry https://registry.npmjs.org/`
    - Start: `npm start`
    > نکته: `prisma generate` به صورت خودکار در `postinstall` و `build` اجرا می‌شود.
 
