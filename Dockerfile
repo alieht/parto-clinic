@@ -2,10 +2,9 @@
 FROM node:20-alpine AS builder
 WORKDIR /app
 COPY package*.json ./
-RUN npm ci
+RUN npm install
 COPY . .
-RUN npx prisma generate
-RUN npm run build
+RUN npx next build
 
 # Production stage
 FROM node:20-alpine AS runner
@@ -24,4 +23,4 @@ COPY --from=builder /app/src/generated ./src/generated
 RUN mkdir -p /app/public/uploads
 
 EXPOSE 3000
-CMD ["sh", "-c", "npx prisma migrate deploy && node server.js"]
+CMD ["node", "server.js"]

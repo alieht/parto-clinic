@@ -1,16 +1,18 @@
 version: "3.9"
+
 services:
   db:
     image: postgres:16-alpine
     restart: unless-stopped
     environment:
       POSTGRES_USER: parto
-      POSTGRES_PASSWORD: parto
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-parto_strong_password}
       POSTGRES_DB: parto
-    ports:
-      - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+    # Not exposed publicly; only accessible within the docker network
+    expose:
+      - "5432"
 
   app:
     build: .
@@ -18,15 +20,35 @@ services:
     depends_on:
       - db
     environment:
-      DATABASE_URL: "postgresql://parto:parto@db:5432/parto?schema=public"
-      JWT_SECRET: "change-me-in-production"
-      ADMIN_PASSWORD: "admin123"
-      NODE_ENV: "production"
-    ports:
-      - "3000:3000"
+      DATABASE_URL: "postgresql://parto:${DB_PASSWORD:-parto_strong_password}@db:5432/parto?schema=public"
+      JWT_SECRET: ${JWT_SECRET}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@parto.online}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      SECRETARY_EMAIL: ${SECRETARY_EMAIL:-secretary@parto.online}
+      SECRETARY_PASSWORD: ${SECRETARY_PASSWORD}
+      SETUP_TOKEN: ${SETUP_TOKEN}
+      NODE_ENV: production
+      PORT: "3000"
     volumes:
       - uploads:/app/public/uploads
+    expose:
+      - "3000"
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - app
 
 volumes:
   pgdata:
   uploads:
+  caddy_data:
+  caddy_config:

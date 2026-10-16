@@ -1,101 +1,130 @@
 # راهنمای لانچ (Deployment Guide)
 
-## گزینه ۱: Pars Pack PaaS (توصیه شده برای ایران)
+## گزینه ۱: VPS + Docker (توصیه شده — کنترل کامل، IP ایران)
 
 ### پیش‌نیازها
-- ریپازیتوری GitHub: https://github.com/alieht/parto-clinic
-- سرویس PaaS Next.js در پارس‌پک
-- سرویس PostgreSQL مدیریت‌شده در پارس‌پک (برای پایداری داده‌ها)
+- یک VPS (پارس‌پک، ایران‌سرور، یا Hetzner برای اروپا) با Ubuntu 22.04/24.04
+- دامنه `parto.online` (DNS به IP سرور اشاره کند)
+- دسترسی SSH به سرور
 
-### مراحل در پنل پارس‌پک
-
-1. **ساخت اپ Next.js**
-   - در پنل پارس‌پک → ایجاد سرویس جدید → نوع: Next.js
-   - اتصال به Git: مخزن `alieht/parto-clinic`، برنچ `main`
-
-2. **ساخت دیتابیس PostgreSQL**
-   - در پنل پارس‌پک → ایجاد سرویس PostgreSQL (مدیریت‌شده)
-   - نام DB: `parto`، کاربر: `parto`
-   - کپی کردن `DATABASE_URL` (فرمت: `postgresql://user:pass@host:5432/parto?schema=public`)
-
-3. **تنظیم متغیرهای محیطی** (در تنظیمات اپ):
-   - `DATABASE_URL` = (از مرحله ۲)
-   - `JWT_SECRET` = یک رشته تصادفی حداقل ۳۲ کاراکتری (مثلاً `openssl rand -base64 32`)
-   - `ADMIN_EMAIL` = `admin@parto.online` (اختیاری، پیش‌فرض همین است)
-   - `ADMIN_PASSWORD` = رمز قوی برای مدیر (پیش‌فرض `admin123` — حتماً تغییر دهید)
-   - `SECRETARY_EMAIL` = `secretary@parto.online` (اختیاری)
-   - `SECRETARY_PASSWORD` = رمز قوی برای منشی (پیش‌فرض `secretary123` — حتماً تغییر دهید)
-   - `NODE_ENV` = `production`
-
-4. **دستورات Build/Start** (در پنل پارس‌پک):
-   - Build: `npm install && npm run build` (npm run build = npx next build)
-   > هیچ دستور prisma در build نیست؛ Prisma Client از قبل commit شده است.
-   > اگر میرور npm پارس‌پک نسخه‌ای را نداشت، قبل از npm install این را اضافه کنید:
-   > `npm config set registry https://registry.npmjs.org/`
-   - Start: `npm start`
-   > نکته: `prisma generate` به صورت خودکار در `postinstall` و `build` اجرا می‌شود.
-
-5. **راه‌اندازی دیتابیس (یک‌بار)** — پس از deploy موفق:
-   - متغیر `SETUP_TOKEN` را در Config/Secret ست کنید (یک رشته تصادفی)
-   - یک درخواست POST بفرستید:
-     ```
-     curl -X POST "https://parto.online/api/setup?token=YOUR_SETUP_TOKEN"
-     ```
-     یا در مرورگر: `https://parto.online/api/setup?token=YOUR_SETUP_TOKEN` (با روش POST)
-   - این endpoint جداول را می‌سازد و داده‌های اولیه (دو حساب، خدمات، مقالات، نظرات، تنظیمات) را seed می‌کند.
-   - پس از موفقیت، `SETUP_TOKEN` را از env vars حذف کنید (یا endpoint را حذف کنید).
-
-6. **فایل‌های آپلود شده**: پارس‌پک volume پایدار را به مسیر `/app/public/uploads` mount کنید تا تصاویر آپلود شده پاک نشوند.
-
-7. **اتصال دامنه**: در پنل پارس‌پک، دامنه `parto.online` را به سرویس متصل کنید.
-
-8. **SSL**: پارس‌پک SSL رایگان ارائه می‌دهد — فعال کنید.
-
-9. **بررسی سلامت**: پس از لانچ، `https://parto.online/api/health` باید `{"status":"ok"}` برگرداند.
-
-### نکات مهم
-- Build قبل از migrate deploy اجرا نشود؛ ترتیب بالا را رعایت کنید.
-- اگر کانتینر ephemeral است، بدون volume پایدار، فایل‌های آپلود پاک می‌شوند.
-- برای بکاپ دیتابیس، از بکاپ خودکار PostgreSQL پارس‌پک استفاده کنید.
-
-## گزینه ۲: سرور اختصاصی (VPS) با Docker
-
+### مرحله ۱: نصب Docker روی VPS
 ```bash
-# روی سرور
-git clone https://github.com/alieht/parto-clinic.git
+# روی سرور (SSH)
+curl -fsSL https://get.docker.com | sh
+sudo usermod -aG docker $USER
+# logout/login یا: newgrp docker
+docker --version
+docker compose version
+```
+
+### مرحله ۲: کلون پروژه
+```bash
+cd /opt
+sudo git clone https://github.com/alieht/parto-clinic.git
+sudo chown -R $USER:$USER parto-clinic
 cd parto-clinic
+```
+
+### مرحله ۳: تنظیم متغیرهای محیطی
+```bash
 cp .env.example .env
-# ویرایش .env (DATABASE_URL, JWT_SECRET, ADMIN_PASSWORD)
-docker compose up -d --build
-# seed یک‌بار:
-docker compose exec app npx tsx prisma/seed.ts
+nano .env   # یا vim .env
 ```
+مقادیر را پر کنید:
+```env
+DB_PASSWORD=یک_رمز_قوی_برای_دیتابیس
+JWT_SECRET=رشته_تصادفی_۳۲_کاراکتری
+ADMIN_PASSWORD=رمز_مدیر
+SECRETARY_PASSWORD=رمز_منشی
+SETUP_TOKEN=یک_رشته_تصادفی_برای_setup
+NODE_ENV=production
+```
+همچنین `Caddyfile` را ویرایش کنید و دامنه را تنظیم کنید (پیش‌فرض: `parto.online`).
 
-یا بدون Docker:
+### مرحله ۴: اجرای Docker Compose
 ```bash
-git clone https://github.com/alieht/parto-clinic.git
-cd parto-clinic
-npm ci
-npx prisma migrate deploy
-ADMIN_PASSWORD=xxx npx tsx prisma/seed.ts
-npm run build
-pm2 start npm --name "parto" -- start
+docker compose up -d --build
+```
+این دستور:
+- PostgreSQL را بالا می‌آورد (با volume پایدار)
+- اپ Next.js را build و اجرا می‌کند
+- Caddy را بالا می‌آورد (SSL خودکار برای دامنه)
+
+### مرحله ۵: بررسی لاگ‌ها
+```bash
+docker compose logs -f app
+```
+باید `Ready on http://0.0.0.0:3000` یا مشابه ببینید.
+
+### مرحله ۶: راه‌اندازی دیتابیس (یک‌بار)
+پس از اینکه سایت بالا آمد (`https://parto.online`):
+```bash
+curl -X POST "https://parto.online/api/setup?token=YOUR_SETUP_TOKEN"
+```
+پاسخ باید `{"success": true, "log": [...]}` باشد.
+
+### مرحله ۷: پس از موفقیت
+- `SETUP_TOKEN` را از `.env` حذف کنید
+- `docker compose restart app`
+- (اختیاری) endpoint `/api/setup` را از کد حذف کنید
+
+### بکاپ و نگهداری
+```bash
+# بکاپ دیتابیس
+docker compose exec db pg_dump -U parto parto > backup_$(date +%F).sql
+
+# بکاپ فایل‌های آپلود
+tar czf uploads_$(date +%F).tar.gz /var/lib/docker/volumes/parto-clinic_uploads/_data
+
+# بروزرسانی کد
+cd /opt/parto-clinic
+git pull
+docker compose up -d --build
 ```
 
-## گزینه ۳: Vercel
-- Vercel serverless → نیاز به PostgreSQL خارجی (Neon/Supabase) و Vercel Blob (فایل‌ها)
-- Deploy با یک کلیک از GitHub
+### عیب‌یابی
+- **سایت بالا نمی‌آید:** `docker compose logs app` را چک کنید
+- **SSL کار نمی‌کند:** DNS دامنه باید به IP سرور اشاره کند (A record). Caddy به صورت خودکار SSL می‌گیرد.
+- **دیتابیس خطا می‌دهد:** `docker compose logs db` را چک کنید
+- **پورت ۸۰/۴۴۳ بسته است:** فایروال را باز کنید:
+  ```bash
+  sudo ufw allow 80/tcp
+  sudo ufw allow 443/tcp
+  sudo ufw allow 22/tcp
+  sudo ufw enable
+  ```
+
+---
+
+## گزینه ۲: Pars Pack PaaS (در صورت تمایل)
+
+پارس‌پک PaaS مشکلاتی با build environment دارد (mirror npm، اجرای prisma CLI). اگر می‌خواهید امتحان کنید:
+- ریپو باید **Public** باشد
+- متغیرهای محیطی را در Config/Secret ست کنید
+- Build خودکار `npm install && npm run build` را اجرا می‌کند
+- پس از deploy، `/api/setup` را یک‌بار فراخوانی کنید
+
+---
+
+## گزینه ۳: Vercel (در صورت دسترسی)
+
+- Auto-deploy از GitHub
+- Supabase برای DB
+- Free tier کافی است
+- محدودیت: نیاز به احراز هویت (از ایران ممکن است مشکل‌ساز باشد)
+
+---
 
 ## چک‌لیست قبل از لانچ
-- [ ] تغییر رمز ادمین (ADMIN_PASSWORD)
-- [ ] تنظیم JWT_SECRET قوی
-- [ ] اجرای migration روی دیتابیس production
-- [ ] اجرای seed
-- [ ] اتصال دامنه parto.online
-- [ ] فعال‌سازی SSL
-- [ ] تست /api/health
-- [ ] تست تمام صفحات
-- [ ] تست فلوی رزرو نوبت
-- [ ] تست پنل مدیر
+- [ ] VPS تهیه شده و Docker نصب شده
+- [ ] DNS دامنه `parto.online` به IP سرور اشاره می‌کند
+- [ ] فایل `.env` پر شده
+- [ ] `Caddyfile` دامنه صحیح را دارد
+- [ ] `docker compose up -d --build` موفق بود
+- [ ] `https://parto.online` کار می‌کند
+- [ ] `/api/setup` یک‌بار اجرا شده
+- [ ] `SETUP_TOKEN` حذف شده
+- [ ] تست ورود ادمین (`admin@parto.online`)
+- [ ] تست ورود منشی (`secretary@parto.online`)
+- [ ] تست رزرو نوبت
 - [ ] تست روی موبایل
-- [ ] Revoke توکن GitHub استفاده‌شده برای پوش
