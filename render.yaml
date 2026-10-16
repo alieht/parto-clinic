@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: parto-clinic
+    runtime: node
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: ADMIN_EMAIL
+        value: admin@parto.online
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: SECRETARY_EMAIL
+        value: secretary@parto.online
+      - key: SECRETARY_PASSWORD
+        sync: false
+      - key: SETUP_TOKEN
+        sync: false

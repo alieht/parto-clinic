@@ -1,127 +1,93 @@
 # راهنمای لانچ (Deployment Guide)
 
-## گزینه ۱: VPS + Docker (توصیه شده — کنترل کامل، IP ایران)
+## گزینه ۱: Render.com (رایگان، بدون کارت، Auto-deploy از GitHub)
 
 ### پیش‌نیازها
-- یک VPS (پارس‌پک، ایران‌سرور، یا Hetzner برای اروپا) با Ubuntu 22.04/24.04
-- دامنه `parto.online` (DNS به IP سرور اشاره کند)
-- دسترسی SSH به سرور
+- حساب GitHub (ریپو `alieht/parto-clinic`)
+- حساب Render.com (ثبت‌نام با GitHub)
+- Supabase برای دیتابیس (رایگان)
 
-### مرحله ۱: نصب Docker روی VPS
+### مرحله ۱: ساخت دیتابیس در Supabase
+1. به https://supabase.com بروید → New Project
+2. نام: `parto-clinic`، رمز DB را ذخیره کنید
+3. Region: نزدیک‌ترین به ایران (Frankfurt)
+4. Plan: Free
+5. Settings → Database → Connection string (URI) را کپی کنید
+6. انتهای URL: `?schema=public` اضافه کنید
+
+### مرحله ۲: Deploy در Render
+1. به https://dashboard.render.com بروید → **New +** → **Web Service**
+2. **Connect GitHub** → ریپو `alieht/parto-clinic` را انتخاب کنید
+3. تنظیمات:
+   - **Name:** `parto-clinic`
+   - **Runtime:** Node
+   - **Build Command:** `npm install && npm run build`
+   - **Start Command:** `npm start`
+   - **Plan:** Free
+4. **Environment Variables** را اضافه کنید:
+   | Key | Value |
+   |-----|-------|
+   | `DATABASE_URL` | connection string Supabase |
+   | `JWT_SECRET` | رشته تصادفی ۳۲+ کاراکتر |
+   | `ADMIN_EMAIL` | `admin@parto.online` |
+   | `ADMIN_PASSWORD` | رمز قوی مدیر |
+   | `SECRETARY_EMAIL` | `secretary@parto.online` |
+   | `SECRETARY_PASSWORD` | رمز قوی منشی |
+   | `SETUP_TOKEN` | یک رشته تصادفی |
+   | `NODE_ENV` | `production` |
+5. **Create Web Service** → Render به صورت خودکار build و deploy می‌کند
+
+### مرحله ۳: راه‌اندازی دیتابیس (یک‌بار)
+پس از deploy موفق (`https://parto-clinic.onrender.com` یا دامنه شما):
 ```bash
-# روی سرور (SSH)
-curl -fsSL https://get.docker.com | sh
-sudo usermod -aG docker $USER
-# logout/login یا: newgrp docker
-docker --version
-docker compose version
+curl -X POST "https://YOUR-URL/api/setup?token=YOUR_SETUP_TOKEN"
 ```
 
-### مرحله ۲: کلون پروژه
-```bash
-cd /opt
-sudo git clone https://github.com/alieht/parto-clinic.git
-sudo chown -R $USER:$USER parto-clinic
-cd parto-clinic
-```
+### مرحله ۴: دامنه سفارشی (اختیاری)
+- در Render → Service → **Settings** → **Custom Domains**
+- دامنه `parto.online` را اضافه کنید
+- DNS: A record یا CNAME به Render
 
-### مرحله ۳: تنظیم متغیرهای محیطی
-```bash
-cp .env.example .env
-nano .env   # یا vim .env
-```
-مقادیر را پر کنید:
-```env
-DB_PASSWORD=یک_رمز_قوی_برای_دیتابیس
-JWT_SECRET=رشته_تصادفی_۳۲_کاراکتری
-ADMIN_PASSWORD=رمز_مدیر
-SECRETARY_PASSWORD=رمز_منشی
-SETUP_TOKEN=یک_رشته_تصادفی_برای_setup
-NODE_ENV=production
-```
-همچنین `Caddyfile` را ویرایش کنید و دامنه را تنظیم کنید (پیش‌فرض: `parto.online`).
+### محدودیت Free Tier
+- **Cold start:** بعد از ۱۵ دقیقه بدون ترافیک، سرور می‌خوابد؛ اولین درخواست ۳۰-۶۰ ثانیه طول می‌کشد
+- **750 ساعت/ماه** رایگان (کافی برای یک سرویس ۲۴/۷)
+- برای رفع cold start: پلن Starter ($7/ماه) یا استفاده از یک cron job برای ping
 
-### مرحله ۴: اجرای Docker Compose
-```bash
-docker compose up -d --build
-```
-این دستور:
-- PostgreSQL را بالا می‌آورد (با volume پایدار)
-- اپ Next.js را build و اجرا می‌کند
-- Caddy را بالا می‌آورد (SSL خودکار برای دامنه)
-
-### مرحله ۵: بررسی لاگ‌ها
-```bash
-docker compose logs -f app
-```
-باید `Ready on http://0.0.0.0:3000` یا مشابه ببینید.
-
-### مرحله ۶: راه‌اندازی دیتابیس (یک‌بار)
-پس از اینکه سایت بالا آمد (`https://parto.online`):
-```bash
-curl -X POST "https://parto.online/api/setup?token=YOUR_SETUP_TOKEN"
-```
-پاسخ باید `{"success": true, "log": [...]}` باشد.
-
-### مرحله ۷: پس از موفقیت
-- `SETUP_TOKEN` را از `.env` حذف کنید
-- `docker compose restart app`
-- (اختیاری) endpoint `/api/setup` را از کد حذف کنید
-
-### بکاپ و نگهداری
-```bash
-# بکاپ دیتابیس
-docker compose exec db pg_dump -U parto parto > backup_$(date +%F).sql
-
-# بکاپ فایل‌های آپلود
-tar czf uploads_$(date +%F).tar.gz /var/lib/docker/volumes/parto-clinic_uploads/_data
-
-# بروزرسانی کد
-cd /opt/parto-clinic
-git pull
-docker compose up -d --build
-```
-
-### عیب‌یابی
-- **سایت بالا نمی‌آید:** `docker compose logs app` را چک کنید
-- **SSL کار نمی‌کند:** DNS دامنه باید به IP سرور اشاره کند (A record). Caddy به صورت خودکار SSL می‌گیرد.
-- **دیتابیس خطا می‌دهد:** `docker compose logs db` را چک کنید
-- **پورت ۸۰/۴۴۳ بسته است:** فایروال را باز کنید:
-  ```bash
-  sudo ufw allow 80/tcp
-  sudo ufw allow 443/tcp
-  sudo ufw allow 22/tcp
-  sudo ufw enable
-  ```
+### Auto-Deploy
+- هر push به `main` به صورت خودکار deploy می‌شود
+- در Render → Service → **Settings** → Auto-Deploy: فعال
 
 ---
 
-## گزینه ۲: Pars Pack PaaS (در صورت تمایل)
+## گزینه ۲: VPS + Docker (کنترل کامل، IP ایران)
 
-پارس‌پک PaaS مشکلاتی با build environment دارد (mirror npm، اجرای prisma CLI). اگر می‌خواهید امتحان کنید:
+(راهنمای کامل در نسخه قبلی موجود است — `Dockerfile`, `docker-compose.yml`, `Caddyfile` آماده‌اند)
+
+### خلاصه
+```bash
+curl -fsSL https://get.docker.com | sh
+cd /opt && git clone https://github.com/alieht/parto-clinic.git && cd parto-clinic
+cp .env.example .env && nano .env
+docker compose up -d --build
+curl -X POST "https://parto.online/api/setup?token=YOUR_SETUP_TOKEN"
+```
+
+---
+
+## گزینه ۳: Pars Pack PaaS (در صورت تمایل)
+
+پارس‌پک PaaS مشکلاتی با build environment دارد. اگر می‌خواهید امتحان کنید:
 - ریپو باید **Public** باشد
 - متغیرهای محیطی را در Config/Secret ست کنید
-- Build خودکار `npm install && npm run build` را اجرا می‌کند
 - پس از deploy، `/api/setup` را یک‌بار فراخوانی کنید
 
 ---
 
-## گزینه ۳: Vercel (در صورت دسترسی)
-
-- Auto-deploy از GitHub
-- Supabase برای DB
-- Free tier کافی است
-- محدودیت: نیاز به احراز هویت (از ایران ممکن است مشکل‌ساز باشد)
-
----
-
 ## چک‌لیست قبل از لانچ
-- [ ] VPS تهیه شده و Docker نصب شده
-- [ ] DNS دامنه `parto.online` به IP سرور اشاره می‌کند
-- [ ] فایل `.env` پر شده
-- [ ] `Caddyfile` دامنه صحیح را دارد
-- [ ] `docker compose up -d --build` موفق بود
-- [ ] `https://parto.online` کار می‌کند
+- [ ] Supabase پروژه ساخته شده و `DATABASE_URL` کپی شده
+- [ ] Render Web Service ساخته شده (یا VPS آماده)
+- [ ] متغیرهای محیطی ست شده
+- [ ] Build موفق بود
 - [ ] `/api/setup` یک‌بار اجرا شده
 - [ ] `SETUP_TOKEN` حذف شده
 - [ ] تست ورود ادمین (`admin@parto.online`)
