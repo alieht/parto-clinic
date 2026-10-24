@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { Pool } from "pg";
 import fs from "fs";
 import path from "path";
-import { prisma } from "@/lib/db";
+import { prisma, normalizeDatabaseUrl } from "@/lib/db";
 import bcrypt from "bcryptjs";
 import { ARTICLES } from "@/lib/articles-data";
 import { SERVICES, TESTIMONIALS } from "@/lib/constants";
@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
       if (fs.existsSync(c)) { sql = fs.readFileSync(c, "utf8"); break; }
     }
     if (sql) {
-      const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+      const pool = new Pool({ connectionString: normalizeDatabaseUrl(process.env.DATABASE_URL || ""), connectionTimeoutMillis: 15000 });
       try {
         await pool.query(sql);
         log.push("migration: applied");

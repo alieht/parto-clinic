@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Pool } from "pg";
+import { normalizeDatabaseUrl } from "@/lib/db";
 
 export async function GET(req: NextRequest) {
   const token = req.headers.get("x-setup-token") || new URL(req.url).searchParams.get("token");
@@ -12,7 +13,7 @@ export async function GET(req: NextRequest) {
   const masked = dbUrl ? dbUrl.replace(/:([^:@]+)@/, ":***@") : "NOT SET";
 
   try {
-    const pool = new Pool({ connectionString: dbUrl, connectionTimeoutMillis: 10000 });
+    const pool = new Pool({ connectionString: normalizeDatabaseUrl(dbUrl || ""), connectionTimeoutMillis: 10000 });
     const res = await pool.query("SELECT 1 as ok");
     await pool.end();
     return NextResponse.json({ status: "connected", dbUrl: masked, result: res.rows });
