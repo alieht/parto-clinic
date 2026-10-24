@@ -7,15 +7,29 @@ const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
 /**
  * Netlify/AWS Lambda cannot resolve IPv6-only hostnames.
  * Supabase's direct host (db.<ref>.supabase.co) is IPv6-only in some regions,
- * so we transparently rewrite it to the IPv4-capable session-mode pooler.
+ * so we transparently rewrite it to the IPv4-capable pooler.
+ *
+ * For app queries we use transaction mode (port 6543) with pgbouncer=true
+ * to avoid exhausting the session-mode pool in serverless.
  */
-export function normalizeDatabaseUrl(url: string): string {
+export function normalizeDatabaseUrl(url: string, transactionMode = true): string {
   // Direct: postgresql://postgres:PASS@db.REF.supabase.co:5432/postgres?...
   const directMatch = url.match(/^postgresql:\/\/postgres:([^@]+)@db\.([a-z0-9]+)\.supabase\.co(:\d+)?\/(.+)$/);
   if (directMatch) {
-    const [, password, ref, , rest] = directMatch;
-    const port = directMatch[3] || ":5432";
-    return `postgresql://postgres.${ref}:${password}@aws-1-eu-central-1.pooler.supabase.com${port}/postgres?${rest.includes("?") ? rest.split("?")[1] : "schema=public"}`;
+    const [, password, ref] = directMatch;
+    const port = transactionMode ? "6543" : "5432";
+    const params = transactionMode ? "schema=public&pgbouncer=true" : "schema=public";
+    return `postgresql://postgres.${ref}:${password}@aws-1-eu-central-1.pooler.supabase.com:${port}/postgres?${params}`;
+  }
+  // Already a pooler URL — adjust port/mode if needed
+  if (url.includes("pooler.supabase.com")) {
+    if (transactionMode && url.includes(":5432/")) {
+      url = url.replace(":5432/", ":6543/");
+    }
+    if (transactionMode && !url.includes("pgbouncer=true")) {
+      url += (url.includes("?") ? "&" : "?") + "pgbouncer=true";
+    }
+    return url;
   }
   return url;
 }
@@ -25,8 +39,8 @@ function createPrismaClient() {
   if (!raw) {
     throw new Error("DATABASE_URL is not set");
   }
-  const connectionString = normalizeDatabaseUrl(raw);
-  const pool = new Pool({ connectionString, connectionTimeoutMillis: 15000, ssl: { rejectUnauthorized: false } });
+  const connectionString = normalizeDatabaseUrl(raw, true);
+  const pool = new Pool({ connectionString, connectionTimeoutMillis: 15000, ssl: { rejectUnauthorized: false }, max: 1 });
   const adapter = new PrismaPg(pool);
   return new PrismaClient({ adapter });
 }

@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
       if (fs.existsSync(c)) { sql = fs.readFileSync(c, "utf8"); break; }
     }
     if (sql) {
-      const pool = new Pool({ connectionString: normalizeDatabaseUrl(process.env.DATABASE_URL || ""), connectionTimeoutMillis: 15000, ssl: { rejectUnauthorized: false } });
+      const pool = new Pool({ connectionString: normalizeDatabaseUrl(process.env.DATABASE_URL || "", false), connectionTimeoutMillis: 15000, ssl: { rejectUnauthorized: false }, max: 1 });
       try {
         await pool.query(sql);
         log.push("migration: applied");
