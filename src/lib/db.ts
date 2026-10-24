@@ -15,7 +15,7 @@ export function normalizeDatabaseUrl(url: string): string {
   if (directMatch) {
     const [, password, ref, , rest] = directMatch;
     const port = directMatch[3] || ":5432";
-    return `postgresql://postgres.${ref}:${password}@aws-0-eu-central-1.pooler.supabase.com${port}/postgres?${rest.includes("?") ? rest.split("?")[1] : "schema=public"}`;
+    return `postgresql://postgres.${ref}:${password}@aws-1-eu-central-1.pooler.supabase.com${port}/postgres?${rest.includes("?") ? rest.split("?")[1] : "schema=public"}`;
   }
   return url;
 }
