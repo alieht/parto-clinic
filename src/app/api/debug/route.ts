@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
   const masked = dbUrl ? dbUrl.replace(/:([^:@]+)@/, ":***@") : "NOT SET";
 
   try {
-    const pool = new Pool({ connectionString: normalizeDatabaseUrl(dbUrl || ""), connectionTimeoutMillis: 10000 });
+    const pool = new Pool({ connectionString: normalizeDatabaseUrl(dbUrl || ""), connectionTimeoutMillis: 10000, ssl: { rejectUnauthorized: false } });
     const res = await pool.query("SELECT 1 as ok");
     await pool.end();
     return NextResponse.json({ status: "connected", dbUrl: masked, result: res.rows });

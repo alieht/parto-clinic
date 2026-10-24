@@ -15,7 +15,7 @@ export function normalizeDatabaseUrl(url: string): string {
   if (directMatch) {
     const [, password, ref, , rest] = directMatch;
     const port = directMatch[3] || ":5432";
-    return `postgresql://postgres:${password}@aws-0-eu-central-1.pooler.supabase.com${port}/postgres?${rest.includes("?") ? rest.split("?")[1] : "schema=public"}`;
+    return `postgresql://postgres.${ref}:${password}@aws-0-eu-central-1.pooler.supabase.com${port}/postgres?${rest.includes("?") ? rest.split("?")[1] : "schema=public"}`;
   }
   return url;
 }
@@ -26,7 +26,7 @@ function createPrismaClient() {
     throw new Error("DATABASE_URL is not set");
   }
   const connectionString = normalizeDatabaseUrl(raw);
-  const pool = new Pool({ connectionString, connectionTimeoutMillis: 15000 });
+  const pool = new Pool({ connectionString, connectionTimeoutMillis: 15000, ssl: { rejectUnauthorized: false } });
   const adapter = new PrismaPg(pool);
   return new PrismaClient({ adapter });
 }
