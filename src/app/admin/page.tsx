@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Calendar, FileText, Star, MessageSquare, Clock, CheckCircle2, XCircle } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
+import { toJalaaliDisplay } from "@/lib/jalali";
 
 export default function AdminDashboard() {
   const [stats, setStats] = React.useState<any>(null);
@@ -69,7 +70,7 @@ export default function AdminDashboard() {
                       <td className="py-3 px-2 font-medium">{a.name}</td>
                       <td className="py-3 px-2" dir="ltr">{a.phone}</td>
                       <td className="py-3 px-2">{a.method}</td>
-                      <td className="py-3 px-2">{a.date}</td>
+                      <td className="py-3 px-2">{toJalaaliDisplay(a.date)}</td>
                       <td className="py-3 px-2">{a.time}</td>
                       <td className="py-3 px-2">
                         <Badge variant={a.status === "pending" ? "warning" : a.status === "confirmed" ? "success" : "default"}>

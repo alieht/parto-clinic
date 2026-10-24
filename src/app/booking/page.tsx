@@ -2,6 +2,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
+import { toJalaali, toGregorian, jalaaliMonthLength } from "jalaali-js";
 import {
   Calendar as CalendarIcon,
   Phone,
@@ -30,16 +31,35 @@ const METHODS = [
   { id: "inperson", label: "مراجعه حضوری", desc: "حضور در کلینیک برای معاینه و درمان", icon: MapPin },
 ];
 
+const JALALI_MONTHS = [
+  "فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور",
+  "مهر", "آبان", "آذر", "دی", "بهمن", "اسفند",
+];
+
+const PERSIAN_DIGITS = "۰۱۲۳۴۵۶۷۸۹";
 function toPersianDigits(s: string) {
-  return s.replace(/\d/g, (d) => "۰۱۲۳۴۵۶۷۸۹"[parseInt(d)]);
+  return s.replace(/\d/g, (d) => PERSIAN_DIGITS[parseInt(d)]);
+}
+
+function toJalaaliStr(gDate: Date): string {
+  const j = toJalaali(gDate.getFullYear(), gDate.getMonth() + 1, gDate.getDate());
+  return `${j.jy}-${String(j.jm).padStart(2, "0")}-${String(j.jd).padStart(2, "0")}`;
 }
 
 export default function BookingPage() {
   const [step, setStep] = React.useState(1);
   const [method, setMethod] = React.useState("inperson");
-  const [currentMonth, setCurrentMonth] = React.useState<Date | null>(null);
-  React.useEffect(() => { setCurrentMonth(new Date()); }, []);
-  const [selectedDate, setSelectedDate] = React.useState<string | null>(null);
+
+  // Jalali calendar state
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const todayJalaali = toJalaali(today.getFullYear(), today.getMonth() + 1, today.getDate());
+
+  const [jYear, setJYear] = React.useState(todayJalaali.jy);
+  const [jMonth, setJMonth] = React.useState(todayJalaali.jm);
+
+  const [selectedDate, setSelectedDate] = React.useState<string | null>(null); // Gregorian ISO
+  const [selectedDateJalaali, setSelectedDateJalaali] = React.useState<string | null>(null); // Jalali display
   const [selectedTime, setSelectedTime] = React.useState<string | null>(null);
   const [services, setServices] = React.useState<any[]>([]);
   React.useEffect(() => {
@@ -56,31 +76,14 @@ export default function BookingPage() {
   const [status, setStatus] = React.useState<"idle" | "loading" | "success" | "error">("idle");
   const [result, setResult] = React.useState<any>(null);
 
-  // Build calendar
-  if (!currentMonth) return <div className="container mx-auto px-4 py-20 text-center">در حال بارگذاری...</div>;
-  const year = currentMonth.getFullYear();
-  const month = currentMonth.getMonth();
-  const firstDay = new Date(year, month, 1);
-  const lastDay = new Date(year, month + 1, 0);
-  const startWeekday = firstDay.getDay(); // 0=Sun
-  // Convert to Persian week (Saturday=0). JS getDay: 0=Sun. We want Sat=0.
-  // Saturday is 6 in JS. So offset = (startWeekday + 1) % 7
-  const offset = (startWeekday + 1) % 7;
-  const daysInMonth = lastDay.getDate();
+  // Days in current Jalali month
+  const daysInMonth = jalaaliMonthLength(jYear, jMonth);
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  const monthNames = [
-    "فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور",
-    "مهر", "آبان", "آذر", "دی", "بهمن", "اسفند",
-  ];
-  // Use Gregorian month names in Persian? The original used "مهر ۱۴۰۵". Let's use Persian calendar-ish labels but Gregorian dates.
-  // Simpler: use Gregorian month name in Persian transliteration.
-  const gregMonthNames = [
-    "ژانویه", "فوریه", "مارس", "آوریل", "مه", "ژوئن",
-    "ژوئیه", "اوت", "سپتامبر", "اکتبر", "نوامبر", "دسامبر",
-  ];
+  // Weekday offset for first day of Jalali month
+  const firstDayGreg = toGregorian(jYear, jMonth, 1);
+  const firstDayDate = new Date(firstDayGreg.gy, firstDayGreg.gm - 1, firstDayGreg.gd);
+  const startWeekday = firstDayDate.getDay(); // 0=Sun
+  const offset = (startWeekday + 1) % 7; // Saturday=0
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -124,6 +127,24 @@ export default function BookingPage() {
   const canProceedStep2 = !!selectedDate && !!selectedTime;
   const canProceedStep3 = form.name.trim() && form.phone.trim();
 
+  const prevMonth = () => {
+    if (jMonth === 1) {
+      setJMonth(12);
+      setJYear(jYear - 1);
+    } else {
+      setJMonth(jMonth - 1);
+    }
+  };
+
+  const nextMonth = () => {
+    if (jMonth === 12) {
+      setJMonth(1);
+      setJYear(jYear + 1);
+    } else {
+      setJMonth(jMonth + 1);
+    }
+  };
+
   if (status === "success") {
     return (
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12 max-w-2xl">
@@ -144,7 +165,7 @@ export default function BookingPage() {
             </a>
           </div>
           <button
-            onClick={() => { setStatus("idle"); setStep(1); setSelectedDate(null); setSelectedTime(null); }}
+            onClick={() => { setStatus("idle"); setStep(1); setSelectedDate(null); setSelectedDateJalaali(null); setSelectedTime(null); }}
             className="mt-6 text-primary font-medium"
           >
             ثبت نوبت جدید
@@ -153,7 +174,6 @@ export default function BookingPage() {
       </div>
     );
   }
-
 
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12 max-w-4xl">
@@ -235,17 +255,17 @@ export default function BookingPage() {
             <div className="rounded-2xl bg-card border border-border p-5">
               <div className="flex items-center justify-between mb-4">
                 <button
-                  onClick={() => setCurrentMonth(new Date(year, month - 1, 1))}
+                  onClick={prevMonth}
                   className="p-2 rounded-lg hover:bg-muted"
                   aria-label="ماه قبل"
                 >
                   <ChevronRight className="h-5 w-5" />
                 </button>
                 <div className="font-bold">
-                  {gregMonthNames[month]} {toPersianDigits(String(year))}
+                  {JALALI_MONTHS[jMonth - 1]} {toPersianDigits(String(jYear))}
                 </div>
                 <button
-                  onClick={() => setCurrentMonth(new Date(year, month + 1, 1))}
+                  onClick={nextMonth}
                   className="p-2 rounded-lg hover:bg-muted"
                   aria-label="ماه بعد"
                 >
@@ -263,8 +283,9 @@ export default function BookingPage() {
                 ))}
                 {Array.from({ length: daysInMonth }).map((_, i) => {
                   const day = i + 1;
-                  const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-                  const dateObj = new Date(year, month, day);
+                  const g = toGregorian(jYear, jMonth, day);
+                  const dateStr = `${g.gy}-${String(g.gm).padStart(2, "0")}-${String(g.gd).padStart(2, "0")}`;
+                  const dateObj = new Date(g.gy, g.gm - 1, g.gd);
                   const isPast = dateObj < today;
                   const isFriday = dateObj.getDay() === 5; // Friday closed
                   const disabled = isPast || isFriday;
@@ -273,7 +294,10 @@ export default function BookingPage() {
                     <button
                       key={day}
                       disabled={disabled}
-                      onClick={() => setSelectedDate(dateStr)}
+                      onClick={() => {
+                        setSelectedDate(dateStr);
+                        setSelectedDateJalaali(`${toPersianDigits(String(day))} ${JALALI_MONTHS[jMonth - 1]} ${toPersianDigits(String(jYear))}`);
+                      }}
                       className={`aspect-square rounded-lg text-sm font-medium transition-all ${
                         disabled
                           ? "text-muted-foreground/40 cursor-not-allowed"
@@ -323,7 +347,7 @@ export default function BookingPage() {
                 <div className="mt-4 p-3 rounded-xl bg-primary/5 text-sm">
                   <div className="font-medium">انتخاب شما:</div>
                   <div className="text-muted-foreground">
-                    {selectedDate} — {selectedTime}
+                    {selectedDateJalaali} — {selectedTime}
                   </div>
                 </div>
               )}
@@ -429,7 +453,7 @@ export default function BookingPage() {
             <div className="bg-muted/50 rounded-xl p-4 text-sm">
               <div className="font-medium mb-1">خلاصه نوبت:</div>
               <div className="text-muted-foreground">
-                روش: {METHODS.find((m) => m.id === method)?.label} | تاریخ: {selectedDate} | ساعت: {selectedTime}
+                روش: {METHODS.find((m) => m.id === method)?.label} | تاریخ: {selectedDateJalaali} | ساعت: {selectedTime}
               </div>
               <div className="text-muted-foreground mt-1">
                 💳 هزینه ویزیت: پس از ارزیابی مشخص می‌شود

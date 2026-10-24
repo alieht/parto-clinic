@@ -3,6 +3,7 @@ import * as React from "react";
 import { Mail, Phone, Trash2, CheckCircle2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
+import { toJalaaliDisplay } from "@/lib/jalali";
 
 export default function AdminMessages() {
   const [messages, setMessages] = React.useState<any[]>([]);
@@ -55,7 +56,7 @@ export default function AdminMessages() {
                 </div>
                 <div className="text-xs text-muted-foreground truncate">{m.subject || m.message}</div>
                 <div className="text-xs text-muted-foreground mt-1">
-                  {new Date(m.createdAt).toLocaleDateString("fa-IR")}
+                  {toJalaaliDisplay(m.createdAt)}
                 </div>
               </button>
             ))}
@@ -91,7 +92,7 @@ export default function AdminMessages() {
                     {selected.message}
                   </div>
                   <div className="mt-4 text-xs text-muted-foreground">
-                    {new Date(selected.createdAt).toLocaleString("fa-IR")}
+                    {toJalaaliDisplay(selected.createdAt)}
                   </div>
                 </CardContent>
               </Card>

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Plus, Edit, Trash2, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
+import { toJalaaliDisplay } from "@/lib/jalali";
 import { Card, CardContent } from "@/components/ui/Card";
 
 export default function AdminArticles() {
@@ -70,7 +71,7 @@ export default function AdminArticles() {
                       <td className="py-3 px-3 font-medium max-w-xs truncate">{a.title}</td>
                       <td className="py-3 px-3 text-xs">{a.category || "—"}</td>
                       <td className="py-3 px-3 text-xs">{a.author}</td>
-                      <td className="py-3 px-3 text-xs">{new Date(a.publishedAt).toLocaleDateString("fa-IR")}</td>
+                      <td className="py-3 px-3 text-xs">{toJalaaliDisplay(a.publishedAt)}</td>
                       <td className="py-3 px-3">{a.views}</td>
                       <td className="py-3 px-3">
                         <Badge variant={a.published ? "success" : "default"}>

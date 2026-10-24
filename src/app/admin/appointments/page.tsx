@@ -3,6 +3,7 @@ import * as React from "react";
 import { CheckCircle2, XCircle, Trash2, Filter } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
+import { toJalaaliDisplay } from "@/lib/jalali";
 import { Card, CardContent } from "@/components/ui/Card";
 
 export default function AdminAppointments() {
@@ -101,7 +102,7 @@ export default function AdminAppointments() {
                       <td className="py-3 px-3" dir="ltr">{a.phone}</td>
                       <td className="py-3 px-3 text-xs">{a.serviceType || "—"}</td>
                       <td className="py-3 px-3">{methodLabel[a.method] || a.method}</td>
-                      <td className="py-3 px-3">{a.date}</td>
+                      <td className="py-3 px-3">{toJalaaliDisplay(a.date)}</td>
                       <td className="py-3 px-3">{a.time}</td>
                       <td className="py-3 px-3">
                         <Badge variant={statusColor[a.status]}>{statusLabel[a.status]}</Badge>
