@@ -1181,6 +1181,7 @@ export const AppointmentScalarFieldEnum = {
   paymentId: 'paymentId',
   videoRoomCode: 'videoRoomCode',
   videoLinkSentAt: 'videoLinkSentAt',
+  admittedAt: 'admittedAt',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const

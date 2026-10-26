@@ -6,3 +6,6 @@ ALTER TABLE "Appointment" ADD COLUMN IF NOT EXISTS "videoLinkSentAt" TIMESTAMP(3
 ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "phone" TEXT;
 ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "resetCodeHash" TEXT;
 ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "resetCodeExpiry" TIMESTAMP(3);
+
+-- Waiting room: the doctor must admit the patient before the room is revealed
+ALTER TABLE "Appointment" ADD COLUMN IF NOT EXISTS "admittedAt" TIMESTAMP(3);

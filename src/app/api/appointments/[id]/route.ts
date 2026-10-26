@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { randomBytes } from "crypto";
 import { prisma } from "@/lib/db";
 import { requireAuth } from "@/lib/auth";
 import { sendDoctorVideoLink, sendPatientVideoLink } from "@/lib/sms";
+import { newRoomCode, signRoomCode, joinPath } from "@/lib/video";
 
 const ALLOWED_FIELDS = [
   "name",
@@ -44,15 +44,17 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (existing.method !== "video") {
       return NextResponse.json({ error: "این نوبت ویزیت تصویری نیست" }, { status: 400 });
     }
-    const roomCode = existing.videoRoomCode || randomBytes(6).toString("hex");
+    const roomCode = existing.videoRoomCode || newRoomCode();
+    const tag = signRoomCode(existing.id, roomCode);
     const doctorPhone = process.env.DOCTOR_PHONE;
     const timeLabel = existing.time;
+    const smsCode = `${roomCode}&t=${tag}`;
 
     const results = await Promise.allSettled([
       doctorPhone
-        ? sendDoctorVideoLink(doctorPhone, existing.name, timeLabel, roomCode)
+        ? sendDoctorVideoLink(doctorPhone, existing.name, timeLabel, smsCode)
         : Promise.resolve(null),
-      sendPatientVideoLink(existing.phone, existing.name, timeLabel, roomCode),
+      sendPatientVideoLink(existing.phone, existing.name, timeLabel, smsCode),
     ]);
 
     const delivered = results.map((r) =>
@@ -69,9 +71,21 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     return NextResponse.json({
       success: true,
       roomCode,
-      joinUrl: `/v?c=${roomCode}`,
+      joinUrl: joinPath(roomCode, tag),
       delivered,
     });
+  }
+
+  // Doctor admits the patient from the waiting room
+  if (body.action === "admit" || body.action === "discharge") {
+    if (existing.method !== "video") {
+      return NextResponse.json({ error: "این نوبت ویزیت تصویری نیست" }, { status: 400 });
+    }
+    const updated = await prisma.appointment.update({
+      where: { id },
+      data: { admittedAt: body.action === "admit" ? new Date() : null },
+    });
+    return NextResponse.json({ success: true, admittedAt: updated.admittedAt });
   }
 
   // Whitelist updatable fields to prevent mass assignment

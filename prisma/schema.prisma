@@ -54,6 +54,7 @@ model Appointment {
   paymentId    String?
   videoRoomCode   String?
   videoLinkSentAt DateTime?
+  admittedAt      DateTime?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 }

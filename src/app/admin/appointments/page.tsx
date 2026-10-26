@@ -1,6 +1,6 @@
 "use client";
 import * as React from "react";
-import { CheckCircle2, XCircle, Trash2, Filter, Video, Copy, Loader2 } from "lucide-react";
+import { CheckCircle2, XCircle, Trash2, Filter, Video, DoorOpen, LogOut, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { toJalaaliDisplay } from "@/lib/jalali";
@@ -55,6 +55,32 @@ export default function AdminAppointments() {
       setSendingId(null);
       load();
     }
+  };
+
+  const admit = async (a: any, action: "admit" | "discharge") => {
+    setSendingId(a.id);
+    try {
+      const res = await fetch(`/api/appointments/${a.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        alert(data.error || "عملیات ناموفق بود");
+      }
+    } finally {
+      setSendingId(null);
+      load();
+    }
+  };
+
+  const openRoom = (a: any) => {
+    if (!a.videoRoomCode) {
+      alert("ابتدا لینک اتاق را ارسال کنید.");
+      return;
+    }
+    window.open(`/v?c=${a.videoRoomCode}`, "_blank");
   };
 
   const remove = async (id: string) => {
@@ -176,6 +202,37 @@ export default function AdminAppointments() {
                               )}
                               {a.videoLinkSentAt ? "ارسال مجدد" : "لینک ویدیو"}
                             </button>
+                          )}
+                          {a.method === "video" && a.videoRoomCode && (
+                            <>
+                              <button
+                                onClick={() => admit(a, a.admittedAt ? "discharge" : "admit")}
+                                disabled={sendingId === a.id}
+                                title={a.admittedAt ? "بستن اتاق" : "پذیرش بیمار"}
+                                className={`inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium transition disabled:opacity-50 ${
+                                  a.admittedAt
+                                    ? "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+                                    : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                                }`}
+                              >
+                                {sendingId === a.id ? (
+                                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                ) : a.admittedAt ? (
+                                  <DoorOpen className="h-3.5 w-3.5" />
+                                ) : (
+                                  <LogOut className="h-3.5 w-3.5" />
+                                )}
+                                {a.admittedAt ? "پذیرفته شد" : "پذیرش"}
+                              </button>
+                              <button
+                                onClick={() => openRoom(a)}
+                                title="ورود پزشک به اتاق"
+                                className="inline-flex items-center gap-1 rounded-lg bg-indigo-600 px-2 py-1 text-xs font-medium text-white transition hover:bg-indigo-700"
+                              >
+                                <Video className="h-3.5 w-3.5" />
+                                ورود
+                              </button>
+                            </>
                           )}
                           <button
                             onClick={() => remove(a.id)}
