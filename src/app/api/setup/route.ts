@@ -6,12 +6,32 @@ import { prisma, normalizeDatabaseUrl } from "@/lib/db";
 import bcrypt from "bcryptjs";
 import { ARTICLES } from "@/lib/articles-data";
 import { SERVICES, TESTIMONIALS } from "@/lib/constants";
+import { getUserFromRequest } from "@/lib/auth";
 
 export async function POST(req: NextRequest) {
+  // Authorized if EITHER:
+  //   1. a valid SETUP_TOKEN is supplied (?token=... or x-setup-token header), OR
+  //   2. the caller is logged into the admin panel as a manager (JWT cookie)
   const token = req.headers.get("x-setup-token") || new URL(req.url).searchParams.get("token");
   const expected = process.env.SETUP_TOKEN;
-  if (!expected || token !== expected) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const tokenOk = Boolean(expected) && token === expected;
+
+  const user = getUserFromRequest(req);
+  const adminOk = user?.role === "admin";
+
+  if (!tokenOk && !adminOk) {
+    const setupTokenConfigured = Boolean(expected);
+    return NextResponse.json(
+      {
+        error: "Unauthorized",
+        hint: setupTokenConfigured
+          ? "توکن ارسال‌شده با SETUP_TOKEN در Netlify مطابقت ندارد. یا مقدار را دقیقاً کپی کنید، یا با حساب مدیر در /admin/login وارد شوید و دوباره همین آدرس را در همان مرورگر باز کنید."
+          : "متغیر SETUP_TOKEN در Netlify تعریف نشده است. یا آن را بسازید، یا با حساب مدیر در /admin/login وارد شوید و دوباره همین آدرس را در همان مرورگر باز کنید.",
+        setupTokenConfigured,
+        adminSession: Boolean(user),
+      },
+      { status: 401 }
+    );
   }
 
   const log: string[] = [];
