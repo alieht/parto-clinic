@@ -1,3 +1,4 @@
+import { join } from "path";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
@@ -41,3 +42,16 @@ export const SITE = {
   mapUrl: "https://maps.app.goo.gl/xH1iaFZ8qULft9ti7",
   email: "",
 };
+
+
+/**
+ * Directory where patient files and admin uploads are written.
+ * On ephemeral hosts (Netlify, serverless) this is inside public/ and is lost
+ * on redeploy. On Liara/VPS set UPLOAD_DIR to the mounted disk path, e.g.
+ * UPLOAD_DIR=/data/uploads, and expose it through /api/files.
+ */
+export function getUploadDir(): string {
+  const configured = process.env.UPLOAD_DIR;
+  if (configured) return configured;
+  return join(process.cwd(), "public", "uploads");
+}

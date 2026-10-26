@@ -1,7 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  output: "standalone",
+  // `next start` refuses to run when output is "standalone", and Liara's
+  // NextJS platform starts the app with `npm start`. Docker builds still need
+  // standalone, so it is opt-in via BUILD_STANDALONE=1 (set in the Dockerfile).
+  output: process.env.BUILD_STANDALONE === "1" ? "standalone" : undefined,
   async headers() {
     return [
       {

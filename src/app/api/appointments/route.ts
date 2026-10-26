@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { requireAuth } from "@/lib/auth";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { appointmentSchema } from "@/lib/validation";
+import { getUploadDir } from "@/lib/utils";
 import { sendPhoneConfirm, sendVideoConfirm, sendInPersonConfirm } from "@/lib/sms";
 import path from "path";
 import fs from "fs";
@@ -45,7 +46,7 @@ export async function POST(req: NextRequest) {
     const uploadedFiles: string[] = [];
     const files = formData.getAll("files") as File[];
     if (files.length > 0) {
-      const uploadDir = path.join(process.cwd(), "public", "uploads");
+      const uploadDir = getUploadDir();
       if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
       for (const file of files) {
         if (file.size === 0) continue;

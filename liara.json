@@ -1,12 +1,5 @@
 {
-  "app": "parto-clinic",
-  "platform": "nextjs",
-  "port": 3000,
-  "nextServer": "standalone",
-  "cron": [
-    {
-      "schedule": "* * * * *",
-      "command": "curl -fsS -m 55 \"http://localhost:3000/api/cron/video-calls?secret=$CRON_SECRET\" > /dev/null || true"
-    }
-  ]
+  "next": {
+    "nodeVersion": "20"
+  }
 }

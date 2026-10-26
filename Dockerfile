@@ -4,6 +4,8 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm install
 COPY . .
+# Docker needs the self-contained server bundle
+ENV BUILD_STANDALONE=1
 RUN npx next build
 
 # Production stage
