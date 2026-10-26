@@ -1,28 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
-import { sendDoctorVideoLink, sendPatientVideoLink } from "@/lib/sms";
-import { newRoomCode, signRoomCode, appointmentToUtc } from "@/lib/video";
+import { runVideoCallReminders, needsSchemaSetup } from "@/lib/video-reminders";
 
 export const dynamic = "force-dynamic";
 
-const PERSIAN_DIGITS = "۰۱۲۳۴۵۶۷۸۹";
-
-function toEnglishDigits(s: string) {
-  return s.replace(/[۰-۹]/g, (d) => String(PERSIAN_DIGITS.indexOf(d)));
-}
-
-/** Send the room link this many minutes before the appointment. */
-// Look this far ahead so a 5-minute external scheduler (GitHub Actions) still
-// reliably catches every appointment. Sending a few minutes earlier is fine —
-// the join page stays locked until JOIN_WINDOW_BEFORE_MIN anyway.
-const LEAD_MINUTES = Number(process.env.VIDEO_LEAD_MINUTES || 15);
-
 /**
- * Cron endpoint: finds video appointments starting in ~5 minutes and SMSes the
- * Jitsi room link to both the doctor and the patient. Idempotent — an
- * appointment is only notified once (tracked by videoLinkSentAt).
+ * Cron endpoint: SMSes the Jitsi room link to the doctor and patient shortly
+ * before a confirmed video appointment. Idempotent (videoLinkSentAt).
  *
- * Protected by CRON_SECRET.
+ * Used by external schedulers (GitHub Actions, Liara cron, Pars Pack) and
+ * handy for manual testing. Protected by CRON_SECRET.
+ *
+ * On hosts that run a long-lived server, INPROCESS_CRON=1 makes the app run
+ * this on its own, so no external scheduler is needed.
  */
 export async function GET(req: NextRequest) {
   const secret = req.headers.get("x-cron-secret") || req.nextUrl.searchParams.get("secret");
@@ -31,75 +20,16 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const now = new Date();
-
   try {
-  const appointments = await prisma.appointment.findMany({
-    where: {
-      method: "video",
-      status: "confirmed",
-      videoLinkSentAt: null,
-    },
-  });
-
-  const notified: string[] = [];
-  const skipped: string[] = [];
-
-  for (const appt of appointments) {
-    const apptAt = appointmentToUtc(appt.date, appt.time);
-    if (!apptAt) {
-      skipped.push(appt.id);
-      continue;
-    }
-    const minutesUntil = (apptAt.getTime() - now.getTime()) / 60000;
-
-    // Send when we're inside the lead window and the appointment hasn't passed
-    if (minutesUntil > LEAD_MINUTES || minutesUntil < 0) continue;
-
-    const roomCode = appt.videoRoomCode || newRoomCode();
-    const doctorPhone = process.env.DOCTOR_PHONE;
-    const timeLabel = toEnglishDigits(appt.time);
-    // SMS carries the code plus its HMAC tag: "<code>&t=<tag>"
-    const smsCode = `${roomCode}&t=${signRoomCode(appt.id, roomCode)}`;
-
-    const results = await Promise.allSettled([
-      doctorPhone
-        ? sendDoctorVideoLink(doctorPhone, appt.name, timeLabel, smsCode)
-        : Promise.resolve(null),
-      sendPatientVideoLink(appt.phone, appt.name, timeLabel, smsCode),
-    ]);
-
-    const anySent = results.some(
-      (r) => r.status === "fulfilled" && r.value && (r.value as { success?: boolean }).success
-    );
-
-    await prisma.appointment.update({
-      where: { id: appt.id },
-      data: {
-        videoRoomCode: roomCode,
-        ...(anySent ? { videoLinkSentAt: now } : {}),
-      },
-    });
-
-    if (anySent) notified.push(appt.id);
-    else skipped.push(appt.id);
-  }
-
-  return NextResponse.json({
-    checked: appointments.length,
-    notified: notified.length,
-    skipped: skipped.length,
-    ids: notified,
-    at: now.toISOString(),
-  });
+    const result = await runVideoCallReminders();
+    return NextResponse.json(result);
   } catch (err: any) {
     const message = err?.message || String(err);
     console.error("video-calls cron failed:", message);
-    const needsSetup = /videoLinkSentAt|videoRoomCode|does not exist|Unknown (argument|field)/i.test(message);
     return NextResponse.json(
       {
         error: message,
-        hint: needsSetup
+        hint: needsSchemaSetup(message)
           ? "ستون‌های دیتابیس ساخته نشده‌اند. یک‌بار /api/setup?token=<SETUP_TOKEN> را اجرا کنید."
           : undefined,
       },
