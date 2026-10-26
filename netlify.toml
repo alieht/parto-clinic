@@ -8,5 +8,9 @@
 [[plugins]]
   package = "@netlify/plugin-nextjs"
 
+# NOTE: the every-minute schedule was removed on purpose.
+# Netlify scheduled functions are rate-limited on the free plan, so reminders are
+# now driven by .github/workflows/video-calls.yml (free, no function quota).
+# The function itself is kept so it can be invoked manually if needed.
 [functions."check-video-calls"]
-  schedule = "* * * * *"
+  schedule = "*/10 * * * *"

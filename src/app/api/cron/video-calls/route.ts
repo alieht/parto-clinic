@@ -12,7 +12,10 @@ function toEnglishDigits(s: string) {
 }
 
 /** Send the room link this many minutes before the appointment. */
-const LEAD_MINUTES = 5;
+// Look this far ahead so a 5-minute external scheduler (GitHub Actions) still
+// reliably catches every appointment. Sending a few minutes earlier is fine —
+// the join page stays locked until JOIN_WINDOW_BEFORE_MIN anyway.
+const LEAD_MINUTES = Number(process.env.VIDEO_LEAD_MINUTES || 15);
 
 /**
  * Cron endpoint: finds video appointments starting in ~5 minutes and SMSes the
