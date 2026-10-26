@@ -30,6 +30,7 @@ export async function GET(req: NextRequest) {
 
   const now = new Date();
 
+  try {
   const appointments = await prisma.appointment.findMany({
     where: {
       method: "video",
@@ -93,4 +94,18 @@ export async function GET(req: NextRequest) {
     ids: notified,
     at: now.toISOString(),
   });
+  } catch (err: any) {
+    const message = err?.message || String(err);
+    console.error("video-calls cron failed:", message);
+    const needsSetup = /videoLinkSentAt|videoRoomCode|does not exist|Unknown (argument|field)/i.test(message);
+    return NextResponse.json(
+      {
+        error: message,
+        hint: needsSetup
+          ? "ستون‌های دیتابیس ساخته نشده‌اند. یک‌بار /api/setup?token=<SETUP_TOKEN> را اجرا کنید."
+          : undefined,
+      },
+      { status: 500 }
+    );
+  }
 }
