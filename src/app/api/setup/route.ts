@@ -134,3 +134,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: err?.message || "Setup failed", log }, { status: 500 });
   }
 }
+
+/**
+ * Browser-friendly alias so the setup can be triggered by simply opening the
+ * URL in a browser (which issues GET). Same token protection + idempotency.
+ */
+export async function GET(req: NextRequest) {
+  return POST(req);
+}
