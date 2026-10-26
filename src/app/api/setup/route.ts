@@ -17,7 +17,38 @@ export async function POST(req: NextRequest) {
   const tokenOk = Boolean(expected) && token === expected;
 
   const user = getUserFromRequest(req);
-  const adminOk = user?.role === "admin";
+  let adminOk = user?.role === "admin";
+
+  // Third path (used to repair schema drift when login itself is broken):
+  // POST body { email, password } validated against the DB with raw SQL, so it
+  // does not depend on the Prisma client matching the current schema.
+  if (!tokenOk && !adminOk && req.method === "POST") {
+    const body = await req.clone().json().catch(() => null);
+    if (body?.email && body?.password) {
+      try {
+        const pool = new Pool({
+          connectionString: normalizeDatabaseUrl(process.env.DATABASE_URL || "", false),
+          connectionTimeoutMillis: 15000,
+          ssl: { rejectUnauthorized: false },
+          max: 1,
+        });
+        try {
+          const r = await pool.query(
+            'SELECT "password", "role" FROM "User" WHERE "email" = $1 LIMIT 1',
+            [String(body.email)]
+          );
+          const row = r.rows[0];
+          if (row?.role === "admin" && (await bcrypt.compare(String(body.password), row.password))) {
+            adminOk = true;
+          }
+        } finally {
+          await pool.end();
+        }
+      } catch (e) {
+        console.error("setup credential check failed:", e);
+      }
+    }
+  }
 
   if (!tokenOk && !adminOk) {
     const setupTokenConfigured = Boolean(expected);
