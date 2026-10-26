@@ -13,6 +13,9 @@ model User {
   name      String
   password  String
   role      String   @default("admin")
+  phone     String?
+  resetCodeHash   String?
+  resetCodeExpiry DateTime?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -49,6 +52,8 @@ model Appointment {
   status       String   @default("pending") // pending | confirmed | completed | cancelled
   paymentStatus String   @default("unpaid") // unpaid | paid | refunded
   paymentId    String?
+  videoRoomCode   String?
+  videoLinkSentAt DateTime?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 }

@@ -1136,6 +1136,9 @@ export const UserScalarFieldEnum = {
   name: 'name',
   password: 'password',
   role: 'role',
+  phone: 'phone',
+  resetCodeHash: 'resetCodeHash',
+  resetCodeExpiry: 'resetCodeExpiry',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
@@ -1176,6 +1179,8 @@ export const AppointmentScalarFieldEnum = {
   status: 'status',
   paymentStatus: 'paymentStatus',
   paymentId: 'paymentId',
+  videoRoomCode: 'videoRoomCode',
+  videoLinkSentAt: 'videoLinkSentAt',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const

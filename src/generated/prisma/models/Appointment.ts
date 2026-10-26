@@ -39,6 +39,8 @@ export type AppointmentMinAggregateOutputType = {
   status: string | null
   paymentStatus: string | null
   paymentId: string | null
+  videoRoomCode: string | null
+  videoLinkSentAt: Date | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -58,6 +60,8 @@ export type AppointmentMaxAggregateOutputType = {
   status: string | null
   paymentStatus: string | null
   paymentId: string | null
+  videoRoomCode: string | null
+  videoLinkSentAt: Date | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -77,6 +81,8 @@ export type AppointmentCountAggregateOutputType = {
   status: number
   paymentStatus: number
   paymentId: number
+  videoRoomCode: number
+  videoLinkSentAt: number
   createdAt: number
   updatedAt: number
   _all: number
@@ -98,6 +104,8 @@ export type AppointmentMinAggregateInputType = {
   status?: true
   paymentStatus?: true
   paymentId?: true
+  videoRoomCode?: true
+  videoLinkSentAt?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -117,6 +125,8 @@ export type AppointmentMaxAggregateInputType = {
   status?: true
   paymentStatus?: true
   paymentId?: true
+  videoRoomCode?: true
+  videoLinkSentAt?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -136,6 +146,8 @@ export type AppointmentCountAggregateInputType = {
   status?: true
   paymentStatus?: true
   paymentId?: true
+  videoRoomCode?: true
+  videoLinkSentAt?: true
   createdAt?: true
   updatedAt?: true
   _all?: true
@@ -228,6 +240,8 @@ export type AppointmentGroupByOutputType = {
   status: string
   paymentStatus: string
   paymentId: string | null
+  videoRoomCode: string | null
+  videoLinkSentAt: Date | null
   createdAt: Date
   updatedAt: Date
   _count: AppointmentCountAggregateOutputType | null
@@ -268,6 +282,8 @@ export type AppointmentWhereInput = {
   status?: Prisma.StringFilter<"Appointment"> | string
   paymentStatus?: Prisma.StringFilter<"Appointment"> | string
   paymentId?: Prisma.StringNullableFilter<"Appointment"> | string | null
+  videoRoomCode?: Prisma.StringNullableFilter<"Appointment"> | string | null
+  videoLinkSentAt?: Prisma.DateTimeNullableFilter<"Appointment"> | Date | string | null
   createdAt?: Prisma.DateTimeFilter<"Appointment"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Appointment"> | Date | string
   service?: Prisma.XOR<Prisma.ServiceNullableScalarRelationFilter, Prisma.ServiceWhereInput> | null
@@ -288,6 +304,8 @@ export type AppointmentOrderByWithRelationInput = {
   status?: Prisma.SortOrder
   paymentStatus?: Prisma.SortOrder
   paymentId?: Prisma.SortOrderInput | Prisma.SortOrder
+  videoRoomCode?: Prisma.SortOrderInput | Prisma.SortOrder
+  videoLinkSentAt?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   service?: Prisma.ServiceOrderByWithRelationInput
@@ -311,6 +329,8 @@ export type AppointmentWhereUniqueInput = Prisma.AtLeast<{
   status?: Prisma.StringFilter<"Appointment"> | string
   paymentStatus?: Prisma.StringFilter<"Appointment"> | string
   paymentId?: Prisma.StringNullableFilter<"Appointment"> | string | null
+  videoRoomCode?: Prisma.StringNullableFilter<"Appointment"> | string | null
+  videoLinkSentAt?: Prisma.DateTimeNullableFilter<"Appointment"> | Date | string | null
   createdAt?: Prisma.DateTimeFilter<"Appointment"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Appointment"> | Date | string
   service?: Prisma.XOR<Prisma.ServiceNullableScalarRelationFilter, Prisma.ServiceWhereInput> | null
@@ -331,6 +351,8 @@ export type AppointmentOrderByWithAggregationInput = {
   status?: Prisma.SortOrder
   paymentStatus?: Prisma.SortOrder
   paymentId?: Prisma.SortOrderInput | Prisma.SortOrder
+  videoRoomCode?: Prisma.SortOrderInput | Prisma.SortOrder
+  videoLinkSentAt?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   _count?: Prisma.AppointmentCountOrderByAggregateInput
@@ -356,6 +378,8 @@ export type AppointmentScalarWhereWithAggregatesInput = {
   status?: Prisma.StringWithAggregatesFilter<"Appointment"> | string
   paymentStatus?: Prisma.StringWithAggregatesFilter<"Appointment"> | string
   paymentId?: Prisma.StringNullableWithAggregatesFilter<"Appointment"> | string | null
+  videoRoomCode?: Prisma.StringNullableWithAggregatesFilter<"Appointment"> | string | null
+  videoLinkSentAt?: Prisma.DateTimeNullableWithAggregatesFilter<"Appointment"> | Date | string | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Appointment"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"Appointment"> | Date | string
 }
@@ -374,6 +398,8 @@ export type AppointmentCreateInput = {
   status?: string
   paymentStatus?: string
   paymentId?: string | null
+  videoRoomCode?: string | null
+  videoLinkSentAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   service?: Prisma.ServiceCreateNestedOneWithoutAppointmentsInput
@@ -394,6 +420,8 @@ export type AppointmentUncheckedCreateInput = {
   status?: string
   paymentStatus?: string
   paymentId?: string | null
+  videoRoomCode?: string | null
+  videoLinkSentAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -412,6 +440,8 @@ export type AppointmentUpdateInput = {
   status?: Prisma.StringFieldUpdateOperationsInput | string
   paymentStatus?: Prisma.StringFieldUpdateOperationsInput | string
   paymentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  videoRoomCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  videoLinkSentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   service?: Prisma.ServiceUpdateOneWithoutAppointmentsNestedInput
@@ -432,6 +462,8 @@ export type AppointmentUncheckedUpdateInput = {
   status?: Prisma.StringFieldUpdateOperationsInput | string
   paymentStatus?: Prisma.StringFieldUpdateOperationsInput | string
   paymentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  videoRoomCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  videoLinkSentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -451,6 +483,8 @@ export type AppointmentCreateManyInput = {
   status?: string
   paymentStatus?: string
   paymentId?: string | null
+  videoRoomCode?: string | null
+  videoLinkSentAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -469,6 +503,8 @@ export type AppointmentUpdateManyMutationInput = {
   status?: Prisma.StringFieldUpdateOperationsInput | string
   paymentStatus?: Prisma.StringFieldUpdateOperationsInput | string
   paymentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  videoRoomCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  videoLinkSentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -488,6 +524,8 @@ export type AppointmentUncheckedUpdateManyInput = {
   status?: Prisma.StringFieldUpdateOperationsInput | string
   paymentStatus?: Prisma.StringFieldUpdateOperationsInput | string
   paymentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  videoRoomCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  videoLinkSentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -517,6 +555,8 @@ export type AppointmentCountOrderByAggregateInput = {
   status?: Prisma.SortOrder
   paymentStatus?: Prisma.SortOrder
   paymentId?: Prisma.SortOrder
+  videoRoomCode?: Prisma.SortOrder
+  videoLinkSentAt?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -536,6 +576,8 @@ export type AppointmentMaxOrderByAggregateInput = {
   status?: Prisma.SortOrder
   paymentStatus?: Prisma.SortOrder
   paymentId?: Prisma.SortOrder
+  videoRoomCode?: Prisma.SortOrder
+  videoLinkSentAt?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -555,6 +597,8 @@ export type AppointmentMinOrderByAggregateInput = {
   status?: Prisma.SortOrder
   paymentStatus?: Prisma.SortOrder
   paymentId?: Prisma.SortOrder
+  videoRoomCode?: Prisma.SortOrder
+  videoLinkSentAt?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -615,6 +659,8 @@ export type AppointmentCreateWithoutServiceInput = {
   status?: string
   paymentStatus?: string
   paymentId?: string | null
+  videoRoomCode?: string | null
+  videoLinkSentAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -633,6 +679,8 @@ export type AppointmentUncheckedCreateWithoutServiceInput = {
   status?: string
   paymentStatus?: string
   paymentId?: string | null
+  videoRoomCode?: string | null
+  videoLinkSentAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -681,6 +729,8 @@ export type AppointmentScalarWhereInput = {
   status?: Prisma.StringFilter<"Appointment"> | string
   paymentStatus?: Prisma.StringFilter<"Appointment"> | string
   paymentId?: Prisma.StringNullableFilter<"Appointment"> | string | null
+  videoRoomCode?: Prisma.StringNullableFilter<"Appointment"> | string | null
+  videoLinkSentAt?: Prisma.DateTimeNullableFilter<"Appointment"> | Date | string | null
   createdAt?: Prisma.DateTimeFilter<"Appointment"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Appointment"> | Date | string
 }
@@ -699,6 +749,8 @@ export type AppointmentCreateManyServiceInput = {
   status?: string
   paymentStatus?: string
   paymentId?: string | null
+  videoRoomCode?: string | null
+  videoLinkSentAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -717,6 +769,8 @@ export type AppointmentUpdateWithoutServiceInput = {
   status?: Prisma.StringFieldUpdateOperationsInput | string
   paymentStatus?: Prisma.StringFieldUpdateOperationsInput | string
   paymentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  videoRoomCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  videoLinkSentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -735,6 +789,8 @@ export type AppointmentUncheckedUpdateWithoutServiceInput = {
   status?: Prisma.StringFieldUpdateOperationsInput | string
   paymentStatus?: Prisma.StringFieldUpdateOperationsInput | string
   paymentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  videoRoomCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  videoLinkSentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -753,6 +809,8 @@ export type AppointmentUncheckedUpdateManyWithoutServiceInput = {
   status?: Prisma.StringFieldUpdateOperationsInput | string
   paymentStatus?: Prisma.StringFieldUpdateOperationsInput | string
   paymentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  videoRoomCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  videoLinkSentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -774,6 +832,8 @@ export type AppointmentSelect<ExtArgs extends runtime.Types.Extensions.InternalA
   status?: boolean
   paymentStatus?: boolean
   paymentId?: boolean
+  videoRoomCode?: boolean
+  videoLinkSentAt?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   service?: boolean | Prisma.Appointment$serviceArgs<ExtArgs>
@@ -794,6 +854,8 @@ export type AppointmentSelectCreateManyAndReturn<ExtArgs extends runtime.Types.E
   status?: boolean
   paymentStatus?: boolean
   paymentId?: boolean
+  videoRoomCode?: boolean
+  videoLinkSentAt?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   service?: boolean | Prisma.Appointment$serviceArgs<ExtArgs>
@@ -814,6 +876,8 @@ export type AppointmentSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.E
   status?: boolean
   paymentStatus?: boolean
   paymentId?: boolean
+  videoRoomCode?: boolean
+  videoLinkSentAt?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   service?: boolean | Prisma.Appointment$serviceArgs<ExtArgs>
@@ -834,11 +898,13 @@ export type AppointmentSelectScalar = {
   status?: boolean
   paymentStatus?: boolean
   paymentId?: boolean
+  videoRoomCode?: boolean
+  videoLinkSentAt?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type AppointmentOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "phone" | "email" | "serviceId" | "serviceType" | "method" | "date" | "time" | "notes" | "files" | "status" | "paymentStatus" | "paymentId" | "createdAt" | "updatedAt", ExtArgs["result"]["appointment"]>
+export type AppointmentOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "phone" | "email" | "serviceId" | "serviceType" | "method" | "date" | "time" | "notes" | "files" | "status" | "paymentStatus" | "paymentId" | "videoRoomCode" | "videoLinkSentAt" | "createdAt" | "updatedAt", ExtArgs["result"]["appointment"]>
 export type AppointmentInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   service?: boolean | Prisma.Appointment$serviceArgs<ExtArgs>
 }
@@ -869,6 +935,8 @@ export type $AppointmentPayload<ExtArgs extends runtime.Types.Extensions.Interna
     status: string
     paymentStatus: string
     paymentId: string | null
+    videoRoomCode: string | null
+    videoLinkSentAt: Date | null
     createdAt: Date
     updatedAt: Date
   }, ExtArgs["result"]["appointment"]>
@@ -1309,6 +1377,8 @@ export interface AppointmentFieldRefs {
   readonly status: Prisma.FieldRef<"Appointment", 'String'>
   readonly paymentStatus: Prisma.FieldRef<"Appointment", 'String'>
   readonly paymentId: Prisma.FieldRef<"Appointment", 'String'>
+  readonly videoRoomCode: Prisma.FieldRef<"Appointment", 'String'>
+  readonly videoLinkSentAt: Prisma.FieldRef<"Appointment", 'DateTime'>
   readonly createdAt: Prisma.FieldRef<"Appointment", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"Appointment", 'DateTime'>
 }

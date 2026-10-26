@@ -1,6 +1,6 @@
 "use client";
 import * as React from "react";
-import { CheckCircle2, XCircle, Trash2, Filter } from "lucide-react";
+import { CheckCircle2, XCircle, Trash2, Filter, Video, Copy, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { toJalaaliDisplay } from "@/lib/jalali";
@@ -29,6 +29,32 @@ export default function AdminAppointments() {
       body: JSON.stringify({ status }),
     });
     load();
+  };
+
+  const [sendingId, setSendingId] = React.useState<string | null>(null);
+
+  const sendVideoLink = async (a: any) => {
+    if (!confirm(`لینک اتاق ویدیویی برای «${a.name}» به بیمار و پزشک پیامک شود؟`)) return;
+    setSendingId(a.id);
+    try {
+      const res = await fetch(`/api/appointments/${a.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "send_video_link" }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.error || "ارسال لینک ناموفق بود");
+      } else {
+        const url = `${window.location.origin}${data.joinUrl}`;
+        alert(`لینک برای پزشک و بیمار ارسال شد.\n\nلینک ورود: ${url}`);
+      }
+    } catch {
+      alert("خطا در ارتباط با سرور");
+    } finally {
+      setSendingId(null);
+      load();
+    }
   };
 
   const remove = async (id: string) => {
@@ -134,6 +160,21 @@ export default function AdminAppointments() {
                               title="انجام شد"
                             >
                               انجام
+                            </button>
+                          )}
+                          {a.method === "video" && (
+                            <button
+                              onClick={() => sendVideoLink(a)}
+                              disabled={sendingId === a.id}
+                              title={a.videoLinkSentAt ? "ارسال مجدد لینک ویدیو" : "ارسال لینک اتاق ویدیویی"}
+                              className="inline-flex items-center gap-1 rounded-lg bg-indigo-50 px-2 py-1 text-xs font-medium text-indigo-700 transition hover:bg-indigo-100 disabled:opacity-50"
+                            >
+                              {sendingId === a.id ? (
+                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                              ) : (
+                                <Video className="h-3.5 w-3.5" />
+                              )}
+                              {a.videoLinkSentAt ? "ارسال مجدد" : "لینک ویدیو"}
                             </button>
                           )}
                           <button

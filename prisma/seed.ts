@@ -20,23 +20,33 @@ async function main() {
   const secretaryHashed = await bcrypt.hash(secretaryPassword, 10);
   await prisma.user.upsert({
     where: { email: adminEmail },
-    update: { password: adminHashed, role: "admin" },
+    update: {
+      password: adminHashed,
+      role: "admin",
+      ...(process.env.ADMIN_PHONE ? { phone: process.env.ADMIN_PHONE } : {}),
+    },
     create: {
       email: adminEmail,
       name: "مدیر کلینیک",
       password: adminHashed,
       role: "admin",
+      phone: process.env.ADMIN_PHONE,
     },
   });
 
   await prisma.user.upsert({
     where: { email: secretaryEmail },
-    update: { password: secretaryHashed, role: "secretary" },
+    update: {
+      password: secretaryHashed,
+      role: "secretary",
+      ...(process.env.SECRETARY_PHONE ? { phone: process.env.SECRETARY_PHONE } : {}),
+    },
     create: {
       email: secretaryEmail,
       name: "منشی کلینیک",
       password: secretaryHashed,
       role: "secretary",
+      phone: process.env.SECRETARY_PHONE,
     },
   });
 

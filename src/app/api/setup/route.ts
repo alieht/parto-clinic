@@ -16,44 +16,58 @@ export async function POST(req: NextRequest) {
 
   const log: string[] = [];
   try {
-    const candidates = [
-      path.join(process.cwd(), "prisma", "migrations", "20261015172210_init", "migration.sql"),
-    ];
-    let sql = "";
-    for (const c of candidates) {
-      if (fs.existsSync(c)) { sql = fs.readFileSync(c, "utf8"); break; }
+    const migrationsDir = path.join(process.cwd(), "prisma", "migrations");
+    const files = fs.existsSync(migrationsDir)
+      ? fs
+          .readdirSync(migrationsDir)
+          .filter((d) => fs.existsSync(path.join(migrationsDir, d, "migration.sql")))
+          .sort()
+      : [];
+
+    if (files.length === 0) {
+      log.push("migration: SQL files not found, skipped");
     }
-    if (sql) {
-      const pool = new Pool({ connectionString: normalizeDatabaseUrl(process.env.DATABASE_URL || "", false), connectionTimeoutMillis: 15000, ssl: { rejectUnauthorized: false }, max: 1 });
-      try {
-        await pool.query(sql);
-        log.push("migration: applied");
-      } catch (e: any) {
-        log.push(`migration: ${e?.message || e}`);
-      } finally {
-        await pool.end();
+
+    const pool = new Pool({
+      connectionString: normalizeDatabaseUrl(process.env.DATABASE_URL || "", false),
+      connectionTimeoutMillis: 15000,
+      ssl: { rejectUnauthorized: false },
+      max: 1,
+    });
+    try {
+      for (const dir of files) {
+        const sql = fs.readFileSync(path.join(migrationsDir, dir, "migration.sql"), "utf8");
+        try {
+          await pool.query(sql);
+          log.push(`migration ${dir}: applied`);
+        } catch (e: any) {
+          // The baseline init migration is not idempotent; re-runs are expected to fail here
+          log.push(`migration ${dir}: ${e?.message || e}`);
+        }
       }
-    } else {
-      log.push("migration: SQL file not found, skipped");
+    } finally {
+      await pool.end();
     }
 
     const adminEmail = process.env.ADMIN_EMAIL || "admin@parto.online";
     const adminPassword = process.env.ADMIN_PASSWORD || "admin123";
     const adminHashed = await bcrypt.hash(adminPassword, 10);
+    const adminPhone = process.env.ADMIN_PHONE || undefined;
     await prisma.user.upsert({
       where: { email: adminEmail },
-      update: { password: adminHashed, role: "admin" },
-      create: { email: adminEmail, name: "مدیر کلینیک", password: adminHashed, role: "admin" },
+      update: { password: adminHashed, role: "admin", ...(adminPhone ? { phone: adminPhone } : {}) },
+      create: { email: adminEmail, name: "مدیر کلینیک", password: adminHashed, role: "admin", phone: adminPhone },
     });
     log.push("seed: admin user ok");
 
     const secretaryEmail = process.env.SECRETARY_EMAIL || "secretary@parto.online";
     const secretaryPassword = process.env.SECRETARY_PASSWORD || "secretary123";
     const secretaryHashed = await bcrypt.hash(secretaryPassword, 10);
+    const secretaryPhone = process.env.SECRETARY_PHONE || undefined;
     await prisma.user.upsert({
       where: { email: secretaryEmail },
-      update: { password: secretaryHashed, role: "secretary" },
-      create: { email: secretaryEmail, name: "منشی کلینیک", password: secretaryHashed, role: "secretary" },
+      update: { password: secretaryHashed, role: "secretary", ...(secretaryPhone ? { phone: secretaryPhone } : {}) },
+      create: { email: secretaryEmail, name: "منشی کلینیک", password: secretaryHashed, role: "secretary", phone: secretaryPhone },
     });
     log.push("seed: secretary user ok");
 

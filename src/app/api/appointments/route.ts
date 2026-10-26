@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { requireAuth } from "@/lib/auth";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { appointmentSchema } from "@/lib/validation";
+import { sendPhoneConfirm, sendVideoConfirm, sendInPersonConfirm } from "@/lib/sms";
 import path from "path";
 import fs from "fs";
 
@@ -71,6 +72,23 @@ export async function POST(req: NextRequest) {
         status: "pending",
       },
     });
+
+    // Send confirmation SMS (fire-and-forget)
+    const patientName = d.name;
+    const appointmentTime = d.time;
+    const patientPhone = d.phone;
+    if (patientPhone) {
+      const sendConfirm = async () => {
+        if (d.method === "phone") {
+          await sendPhoneConfirm(patientPhone, patientName, appointmentTime);
+        } else if (d.method === "video") {
+          await sendVideoConfirm(patientPhone, patientName, appointmentTime);
+        } else {
+          await sendInPersonConfirm(patientPhone, patientName, appointmentTime);
+        }
+      };
+      sendConfirm().catch((e) => console.error("SMS confirm error:", e));
+    }
 
     return NextResponse.json(appointment, { status: 201 });
   } catch (err) {
