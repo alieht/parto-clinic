@@ -15,6 +15,21 @@ function toEnglishDigits(s: string) {
 const LEAD_MINUTES = 5;
 
 /**
+ * Appointment date/time are stored as *clinic wall-clock* (Asia/Tehran).
+ * Netlify functions run in UTC, so the wall-clock value must be converted to a
+ * real UTC instant before comparing with `now`. Iran has no DST, so a fixed
+ * offset is enough (UTC+3:30 = 210 minutes).
+ */
+const CLINIC_OFFSET_MINUTES = Number(process.env.CLINIC_TZ_OFFSET_MINUTES || 210);
+
+/** Convert clinic wall-clock parts to the equivalent UTC timestamp (ms). */
+function clinicWallClockToUtc(
+  year: number, month: number, day: number, hour: number, minute: number
+): number {
+  return Date.UTC(year, month - 1, day, hour, minute, 0, 0) - CLINIC_OFFSET_MINUTES * 60 * 1000;
+}
+
+/**
  * Cron endpoint: finds video appointments starting in ~5 minutes and SMSes the
  * Jitsi room link to both the doctor and the patient. Idempotent — an
  * appointment is only notified once (tracked by videoLinkSentAt).
@@ -50,12 +65,9 @@ export async function GET(req: NextRequest) {
       continue;
     }
 
-    // date is stored as a Gregorian ISO yyyy-mm-dd with the wall-clock time
-    const apptAt = new Date(
-      parts[0], parts[1] - 1, parts[2],
-      timeParts[0], timeParts[1], 0, 0
-    );
-    const minutesUntil = (apptAt.getTime() - now.getTime()) / 60000;
+    // date is a Gregorian ISO yyyy-mm-dd; time is clinic wall-clock (Tehran)
+    const apptAtMs = clinicWallClockToUtc(parts[0], parts[1], parts[2], timeParts[0], timeParts[1]);
+    const minutesUntil = (apptAtMs - now.getTime()) / 60000;
 
     // Send when we're inside the lead window and the appointment hasn't passed
     if (minutesUntil > LEAD_MINUTES || minutesUntil < 0) continue;
